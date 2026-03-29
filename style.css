@@ -510,8 +510,7 @@ body.has-compose #scrollDownBtn{bottom:calc(var(--compose-h,120px) + 16px);}
 /* ══ ADDITIONS & FIXES ══ */
 
 /* emoji picker — relative position for X button */
-#emojiPicker { position: relative; }
-.ep-close-btn { position:absolute; top:5px; left:5px; }
+
 
 /* quote block — prettier */
 .quote-block {
