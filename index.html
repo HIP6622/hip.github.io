@@ -99,7 +99,7 @@
         </div>
       </div>
       
-      <a class="hdr-icon-btn" href="/cdn-cgi/l/email-protection#437376777b7670747577752203242e222a2f6d202c2e" title="פנייה למנהל">
+      <a class="hdr-icon-btn" href="https://mail.google.com/mail/?view=cm&fs=1&to=0548537646a@gmail.com&su=%D7%9C%D7%9B%D7%91%D7%95%D7%93%20%D7%9E%D7%A0%D7%94%D7%9C%20%D7%90%D7%AA%D7%A8%20%D7%91%D7%99%D7%A0%D7%94%20%D7%95%D7%93%D7%A2%D7%94" target="_blank" rel="noopener" title="פנייה למנהל">
         <i class="fas fa-envelope" style="font-size:13px"></i>
       </a>
       <button id="darkBtn" onclick="toggleDark()" title="מצב כהה">
@@ -347,17 +347,36 @@
 <div id="chatCtxMenu"></div>
 
 <div id="emojiPicker">
-  <button class="ep-close-btn" onclick="closeEmojiPicker()" title="סגור" style="position:absolute;top:6px;left:6px;background:none;border:none;cursor:pointer;color:#aaa;font-size:13px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .1s;z-index:2;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">✕</button>
-  <button class="ep-btn" onclick="pickEmoji('🙏')">🙏</button>
-  <button class="ep-btn" onclick="pickEmoji('🔥')">🔥</button>
-  <button class="ep-btn" onclick="pickEmoji('😭')">😭</button>
-  <button class="ep-btn" onclick="pickEmoji('😂')">😂</button>
-  <button class="ep-btn" onclick="pickEmoji('👍')">👍</button>
+  <button class="ep-close-btn" onclick="document.getElementById('emojiPicker').classList.remove('show')" title="סגור" style="position:absolute;top:6px;left:6px;background:none;border:none;cursor:pointer;color:#aaa;font-size:13px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .1s;z-index:2;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">✕</button>
   <button class="ep-btn" onclick="pickEmoji('❤️')">❤️</button>
-  <button class="ep-btn" onclick="pickEmoji('👎')">👎</button>
-  <button class="ep-btn" onclick="pickEmoji('💯')">💯</button>
-  <button class="ep-btn" onclick="pickEmoji('😮')">😮</button>
+  <button class="ep-btn" onclick="pickEmoji('👍')">👍</button>
+  <button class="ep-btn" onclick="pickEmoji('😂')">😂</button>
+  <button class="ep-btn" onclick="pickEmoji('😭')">😭</button>
+  <button class="ep-btn" onclick="pickEmoji('🔥')">🔥</button>
+  <button class="ep-btn" onclick="pickEmoji('🙏')">🙏</button>
   <button class="ep-btn" onclick="pickEmoji('😍')">😍</button>
+  <button class="ep-btn" onclick="pickEmoji('😮')">😮</button>
+  <button class="ep-btn" onclick="pickEmoji('💯')">💯</button>
+  <button class="ep-btn" onclick="pickEmoji('👎')">👎</button>
+  <button class="ep-btn" onclick="pickEmoji('😊')">😊</button>
+  <button class="ep-btn" onclick="pickEmoji('😢')">😢</button>
+  <button class="ep-btn" onclick="pickEmoji('🤬')">🤬</button>
+  <button class="ep-btn" onclick="pickEmoji('💥')">💥</button>
+  <button class="ep-btn" onclick="pickEmoji('🥳')">🥳</button>
+  <button class="ep-btn" onclick="pickEmoji('😕')">😕</button>
+  <button class="ep-btn" onclick="pickEmoji('🍿')">🍿</button>
+  <button class="ep-btn" onclick="pickEmoji('💪')">💪</button>
+  <button class="ep-btn" onclick="pickEmoji('🚀')">🚀</button>
+  <button class="ep-btn" onclick="pickEmoji('😉')">😉</button>
+  <button class="ep-btn" onclick="pickEmoji('🥵')">🥵</button>
+  <button class="ep-btn" onclick="pickEmoji('🤑')">🤑</button>
+  <button class="ep-btn" onclick="pickEmoji('🎯')">🎯</button>
+  <button class="ep-btn" onclick="pickEmoji('🌀')">🌀</button>
+  <button class="ep-btn" onclick="pickEmoji('😌')">😌</button>
+  <button class="ep-btn" onclick="pickEmoji('💔')">💔</button>
+  <button class="ep-btn" onclick="pickEmoji('😨')">😨</button>
+  <button class="ep-btn" onclick="pickEmoji('🤣')">🤣</button>
+  <button class="ep-btn" onclick="pickEmoji('📖')">📖</button>
 </div>
 
 <div id="adModal" style="display:none;position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.5);align-items:center;justify-content:center">
@@ -513,27 +532,4 @@
   </div>
 </div>
 
-<script src="./script.js" defer></script>
-<script>
-  window.addEventListener('load', function() {
-    fetch('/api/settings').then(r=>r.json()).then(d=>{
-      if(d) { siteGlobalSettings=d; try{localStorage.setItem('siteGlobalSettings',JSON.stringify(d));}catch(e){} }
-    }).catch(()=>{});
-
-    const saved = loadSavedUser();
-    if(saved) { verifyAndLogin(saved); }
-    else {
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogle,
-        auto_select: false
-      });
-      google.accounts.id.renderButton(document.getElementById('googleBtn'), {
-        theme: 'outline', size: 'large', shape: 'pill',
-        text: 'signin_with', locale: 'he'
-      });
-    }
-  });
-</script>
-</body>
-</html>
+<script da
