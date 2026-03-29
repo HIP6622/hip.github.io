@@ -1,4 +1,5 @@
 const BACKEND = 'https://hiphopruzbcrd.pythonanywhere.com';
+window.handleGoogle = function(resp) { handleLogin(resp); };
 const GOOGLE_CLIENT_ID = '548333676754-ohvlnp1nfjpc1jnbkdfmr9hpccaj508i.apps.googleusercontent.com';
 const LOGO = 'https://i.ibb.co/pBvLbsG3/ed89a1453931.png';
 const ADMIN_EMAIL = 'hip@hamakom.ovh';
