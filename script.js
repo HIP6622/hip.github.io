@@ -248,6 +248,7 @@ async function applyLogin(){
   fetch(BACKEND+'/api/users_count').then(r=>r.json()).then(d=>{
       const pc = document.getElementById('publicUserCount');
       if(pc) pc.textContent = d.count || '...';
+      updateEmailCountBadge(d.count);
   }).catch(()=>{});
 
   // await כדי ש-_allowedMap ייטען לפני כל שאר האתחול
@@ -340,7 +341,13 @@ function buildMsg(e){
   // ציטוטים מובנים
   let quoteHtml='';
   if(e.quote) {
-      quoteHtml = `<div class="quote-block" style="background:#f3f4f6; border-right:3px solid #9ca3af; padding:8px 10px; margin-bottom:8px; border-radius:6px; font-size:12px; color:#4b5563;"><i class="fas fa-quote-right" style="color:#9ca3af;"></i> <strong>${esc(e.quote.sender)}:</strong> ${esc(e.quote.text)}</div>`;
+      quoteHtml = `<div class="quote-block" onclick="(function(){const el=document.querySelector('[data-id=\"${escAttr(e.quote.id||'')}\"]');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid #1a56db';setTimeout(()=>el.style.outline='',1500);}})()">
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;">
+          <i class="fas fa-reply" style="color:#1a56db;font-size:10px;transform:scaleX(-1);"></i>
+          <span style="font-size:11px;font-weight:800;color:#1a56db;">${esc(e.quote.sender)}</span>
+        </div>
+        <div class="quote-block-text">${esc((e.quote.text||'').substring(0,120))}${(e.quote.text||'').length>120?'...':''}</div>
+      </div>`;
   }
   
   const n=cmtCount[id]||0;
@@ -384,7 +391,6 @@ function openPicker(ev,msgId){
   ev.stopPropagation();
   activePicker=msgId;
   const p=document.getElementById('emojiPicker');
-  // תחילה הצג כדי לחשב גובה
   p.style.display='grid';
   requestAnimationFrame(()=>{
     const rect=ev.currentTarget.getBoundingClientRect();
@@ -395,6 +401,11 @@ function openPicker(ev,msgId){
     p.style.left = Math.max(8, rect.right - pickerW) + 'px';
     p.classList.add('show');
   });
+}
+function closeEmojiPicker(){
+  const p=document.getElementById('emojiPicker');
+  if(p){p.classList.remove('show');p.style.display='none';}
+  activePicker=null;
 }
 
 function pickEmoji(em){
@@ -439,16 +450,40 @@ function quoteFeedMsg(id){
     ed.focus();
 }
 
-// מערכת דיווחים מתקדמת
-async function reportMsg(msgId) {
-    if(!me) { alert("יש להתחבר כדי לדווח"); return; }
-    const reason = prompt("מה סיבת הדיווח על הודעה זו?");
-    if(!reason) return;
+// מערכת דיווחים — modal מודרני
+let _reportTargetMsgId = null;
+function reportMsg(msgId) {
+    if(!me) { showToast('יש להתחבר כדי לדווח', 'error'); return; }
+    _reportTargetMsgId = msgId;
+    document.getElementById('reportModalMsgId').textContent = '#' + msgId;
+    document.getElementById('reportModalInput').value = '';
+    document.getElementById('reportModalError').style.display = 'none';
+    document.getElementById('reportModalOverlay').style.display = 'flex';
+    setTimeout(() => document.getElementById('reportModalInput').focus(), 80);
+}
+function closeReportModal() {
+    document.getElementById('reportModalOverlay').style.display = 'none';
+    _reportTargetMsgId = null;
+}
+async function submitReport() {
+    const reason = document.getElementById('reportModalInput').value.trim();
+    const errEl = document.getElementById('reportModalError');
+    if(!reason) { errEl.style.display='block'; errEl.textContent='נא לפרט את סיבת הדיווח.'; return; }
+    const btn = document.getElementById('reportSubmitBtn');
+    btn.disabled = true; btn.textContent = 'שולח...';
     try {
-        const res = await fetch(BACKEND + '/feed_report', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:me.email, msgId:msgId, reason:reason})});
+        const res = await fetch(BACKEND+'/feed_report', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:me.email, msgId:_reportTargetMsgId, reason})});
         const d = await res.json();
-        if(d.status === 'ok') alert('הדיווח נשלח בהצלחה להנהלה. תודה.');
-    } catch(e) {}
+        if(d.status === 'ok') { closeReportModal(); showToast('הדיווח נשלח בהצלחה. תודה!', 'success'); }
+        else { errEl.style.display='block'; errEl.textContent='שגיאה בשליחה, נסה שוב.'; }
+    } catch(e) { errEl.style.display='block'; errEl.textContent='שגיאת חיבור.'; }
+    btn.disabled = false; btn.textContent = 'שלח דיווח';
+}
+function showToast(msg, type='success') {
+    const t = document.createElement('div');
+    t.style.cssText = `position:fixed;bottom:32px;right:24px;z-index:9999;background:${type==='success'?'#059669':'#dc2626'};color:#fff;padding:13px 20px;border-radius:12px;font-size:14px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.2);font-family:'Heebo',sans-serif;animation:pickerPop .25s ease-out;`;
+    t.textContent = msg; document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
 }
 
 async function openReportsModal() {
@@ -461,22 +496,31 @@ async function openReportsModal() {
         if(!reports.length) { document.getElementById('reportsList').innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">אין דיווחים פתוחים.</div>'; return; }
         
         document.getElementById('reportsList').innerHTML = reports.map(r => `
-            <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:12px; margin-bottom:10px;">
-                <div style="font-weight:bold; color:#b91c1c; font-size:14px; margin-bottom:5px;">מדווח: ${esc(r.reporter)}</div>
-                <div style="font-size:13px; font-weight:bold; margin-bottom:5px;">סיבה: ${esc(r.reason)}</div>
-                <div style="font-size:12px; color:#4b5563; margin-bottom:10px; background:#fff; padding:8px; border-radius:6px; border:1px solid #e5e7eb;">
-                    "${esc(r.msgText).substring(0,100)}..."
+            <div style="background:#fef2f2; border:1.5px solid #fecaca; border-radius:14px; padding:14px; margin-bottom:10px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <i class="fas fa-flag" style="color:#dc2626;font-size:11px;"></i>
+                  <span style="font-weight:800;color:#b91c1c;font-size:13px;">דיווח על הודעה</span>
                 </div>
-                <div style="display:flex; gap:10px;">
-                    <button onclick="deleteFeedMsg('${r.msgId}'); dismissReport('${r.id}')" style="background:#dc2626; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-family:'Heebo'; font-weight:bold; font-size:12px;">מחק את הפוסט</button>
-                    <button onclick="dismissReport('${r.id}')" style="background:#f3f4f6; color:#374151; border:1px solid #d1d5db; padding:6px 12px; border-radius:6px; cursor:pointer; font-family:'Heebo'; font-weight:bold; font-size:12px;">טופל (הסר דיווח)</button>
-                </div>
+                <a href="#msg-link-${r.msgId}" onclick="scrollToReportedMsg('${r.msgId}'); closeReportsModal();" style="font-size:11px;font-weight:700;color:#1a56db;text-decoration:none;background:#eff6ff;padding:3px 9px;border-radius:6px;border:1px solid #bfdbfe;"><i class="fas fa-arrow-left" style="font-size:9px;"></i> עבור להודעה</a>
+              </div>
+              <div style="font-size:12px;color:#6b7280;margin-bottom:4px;"><b>מדווח:</b> ${esc(r.reporter)}</div>
+              <div style="font-size:12px;color:#6b7280;margin-bottom:8px;"><b>סיבה:</b> ${esc(r.reason)}</div>
+              <div style="font-size:12px;color:#374151;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid #fecaca;margin-bottom:10px;font-style:italic;">"${esc((r.msgText||'').substring(0,120))}${(r.msgText||'').length>120?'...':''}"</div>
+              <div style="display:flex;gap:8px;">
+                <button onclick="deleteFeedMsg('${r.msgId}');dismissReport('${r.id}')" style="flex:1;background:#dc2626;color:#fff;border:none;padding:7px;border-radius:8px;cursor:pointer;font-family:'Heebo';font-weight:800;font-size:12px;"><i class="fas fa-trash" style="font-size:10px;"></i> מחק פוסט</button>
+                <button onclick="dismissReport('${r.id}')" style="flex:1;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;padding:7px;border-radius:8px;cursor:pointer;font-family:'Heebo';font-weight:800;font-size:12px;"><i class="fas fa-check" style="font-size:10px;"></i> טופל</button>
+              </div>
             </div>
         `).join('');
     } catch(e) { document.getElementById('reportsList').innerHTML = '<div style="color:red;text-align:center;">שגיאה</div>'; }
 }
 
 function closeReportsModal() { document.getElementById('reportsModal').style.display = 'none'; }
+function scrollToReportedMsg(msgId) {
+  const el = document.querySelector('[data-id="'+msgId+'"]');
+  if(el){ el.id='msg-link-'+msgId; el.scrollIntoView({behavior:'smooth',block:'center'}); el.style.outline='2px solid #dc2626'; setTimeout(()=>el.style.outline='',1800); }
+}
 async function dismissReport(reportId) {
     try {
         await fetch(BACKEND + '/report_resolve', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:me.email, reportId:reportId})});
@@ -770,11 +814,19 @@ function openLeaderboard() { document.getElementById('leaderboardModal').style.d
 function closeLeaderboard() { document.getElementById('leaderboardModal').style.display = 'none'; }
 
 async function loadLeaderboardData() {
-  document.getElementById('lbContent').innerHTML = '<div style="text-align:center; padding:40px; color:#aaa;"><i class="fas fa-spinner fa-spin fa-2x"></i><br>טוען נתונים...</div>';
+  const lbEl = document.getElementById('lbContent');
+  if(!lbEl) return;
+  lbEl.innerHTML = '<div style="text-align:center; padding:40px; color:#aaa;"><i class="fas fa-spinner fa-spin fa-2x"></i><br>טוען נתונים...</div>';
   try {
-    const res = await fetch(BACKEND + '/api/leaderboard'); const d = await res.json();
-    lbData = d.leaderboard || []; switchLbView('podium'); 
-  } catch(e) { document.getElementById('lbContent').innerHTML = '<div style="text-align:center; color:red;">שגיאה בטעינת הנתונים</div>'; }
+    const res = await fetch(BACKEND + '/api/leaderboard');
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+    if(d.status !== 'ok') throw new Error(d.error || 'server error');
+    lbData = d.leaderboard || [];
+    switchLbView('podium');
+  } catch(e) {
+    lbEl.innerHTML = '<div style="text-align:center;padding:30px;color:#dc2626;"><i class="fas fa-exclamation-triangle"></i><br>שגיאה בטעינת הנתונים<br><small style="color:#aaa;font-size:11px;">' + (e.message||'') + '</small></div>';
+  }
 }
 
 function switchLbView(viewType) {
@@ -1128,15 +1180,18 @@ async function sendChatMsg() {
   const inp = document.getElementById('chatInput');
   const text = (inp?.value || '').trim();
   if (!text) return;
-  inp.value = ''; inp.style.height = 'auto';
   clearChatTyping();
   try {
-    await fetch(BACKEND + '/chat_add', {
+    const res = await fetch(BACKEND + '/chat_add', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ email: me.email, name: _allowedMap[me.email.toLowerCase()]?.name || me.name, text })
     });
-    await loadAdminChat();
-  } catch(e) {}
+    const d = await res.json();
+    if(d.status === 'ok') {
+      inp.value = ''; inp.style.height = 'auto';
+      await loadAdminChat();
+    }
+  } catch(e) { console.error('chat send error', e); }
 }
 
 function handleChatInputKey(e) {
@@ -1404,3 +1459,22 @@ function tryInitGoogle() { if (window.google && window.google.accounts) { initGo
 tryInitGoogle();
 
 setInterval(pollAll,3000);
+
+
+function updateEmailCountBadge(count) {
+  const badge = document.getElementById('hdrEmailCountBadge');
+  if(!badge) return;
+  if(count && count > 0) {
+    badge.textContent = count > 999 ? '999+' : count;
+    badge.style.display = 'block';
+  }
+}
+function updateEmailCountBadge(count) {
+  const badge = document.getElementById('hdrEmailCountBadge');
+  if(!badge) return;
+  if(count && count > 0) {
+    badge.textContent = count > 999 ? '999+' : count;
+    badge.style.display = 'block';
+  }
+}
+/* hook into existing users_count fetch */
