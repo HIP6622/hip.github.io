@@ -215,49 +215,27 @@ async function verifyAndLogin(user){
   } catch(e) {}
   
   if(user.name&&(user.name.includes('×—')||user.name.includes('Ã'))) user.name=user.email.split('@')[0];
-  me=user; saveUser(user); applyLogin(); return true;
+  me=user; saveUser(user); await applyLogin(); return true;
 }
 
-function applyLogin(){
+async function applyLogin(){
   initGlobalSettings();
   const av=document.getElementById('userAvatar');
   const avatarHtml=me.picture?`<img src="${escAttr(me.picture)}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid #1a56db;box-shadow:0 2px 6px rgba(0,0,0,0.1)">`:`<div style="width:34px;height:34px;border-radius:50%;background:#1a56db;color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.1)">${esc(me.name[0].toUpperCase())}</div>`;
   
-  const role = getRole();
-  let adminMenuHtml = '';
-  
-  if(role === 'super' || role === 'supervisor') {
-      adminMenuHtml += `
-        <div style="border-top:1px solid #e5e7eb; margin-top:8px; padding-top:8px;">
-          <div style="padding:0 14px 6px;font-size:11px;font-weight:800;color:#1a56db;text-transform:uppercase;letter-spacing:0.5px;">ניהול הערוץ</div>
-          <button onclick="openLeaderboard()" style="width:100%;padding:8px 14px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:10px;"><i class="fas fa-chart-bar" style="color:#ea580c;width:16px;"></i> סטטיסטיקות</button>
-          <button onclick="openReportsModal()" style="width:100%;padding:8px 14px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:10px;"><i class="fas fa-flag" style="color:#dc2626;width:16px;"></i> דיווחי משתמשים</button>
-          <button onclick="openManageAdmins()" style="width:100%;padding:8px 14px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:10px;"><i class="fas fa-user-cog" style="color:#1a56db;width:16px;"></i> יוצרים וצוות</button>
-      `;
-  }
-  if(role === 'super') {
-      adminMenuHtml += `
-          <button onclick="openSiteSettings()" style="width:100%;padding:8px 14px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:10px;"><i class="fas fa-tools" style="color:#7c3aed;width:16px;"></i> הגדרות וחסימות</button>
-          <button onclick="openWritePerms()" style="width:100%;padding:8px 14px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:10px;"><i class="fas fa-pen" style="color:#059669;width:16px;"></i> הרשאות כתיבה</button>
-          <button onclick="openAdPanel()" style="width:100%;padding:8px 14px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:10px;"><i class="fas fa-ad" style="color:#ca8a04;width:16px;"></i> פרסומות</button>
-          <button onclick="if(typeof openAdminMsgs==='function')openAdminMsgs()" style="width:100%;padding:8px 14px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:10px;"><i class="fas fa-bullhorn" style="color:#e02020;width:16px;"></i> הודעות למנהלים</button>
-      `;
-  }
-  if(adminMenuHtml !== '') adminMenuHtml += '</div>';
-
+  // בנה skeleton מינימלי עם ה-avatar — refreshUserMenu() ישלים את התפריט לאחר טעינת ה-map
   av.innerHTML=`<div style="cursor:pointer" onclick="toggleUserMenu(event)">${avatarHtml}</div>
   <div id="userMenu" style="display:none;position:absolute;top:54px;left:0;background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 12px 36px rgba(0,0,0,.15);z-index:900;min-width:220px;overflow:hidden;font-family:'Heebo',sans-serif;animation:pickerPop 0.2s ease-out;">
     <div style="padding:16px 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f3f4f6;">
       ${avatarHtml}
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:800;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(me.name)}</div>
-        <div style="font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(me.email)}</div>
-        <div style="font-size:10px;font-weight:800;color:#1a56db;">${role}</div>
+        <div style="font-size:14px;font-weight:800;color:#111;">${esc(me.name)}</div>
+        <div style="font-size:11px;color:#6b7280;">${esc(me.email)}</div>
+        <div style="font-size:10px;font-weight:800;color:#1a56db;" id="menuRoleDisplay">...</div>
       </div>
     </div>
-    ${adminMenuHtml}
     <div style="border-top:1px solid #e5e7eb; margin-top:4px; padding:4px 0;">
-      <button onclick="doLogout()" style="width:100%;padding:10px 16px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:700;color:#dc2626;display:flex;align-items:center;gap:10px;transition:background 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'"><i class="fas fa-sign-out-alt" style="width:16px;"></i> התנתק</button>
+      <button onclick="doLogout()" style="width:100%;padding:10px 16px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:700;color:#dc2626;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'"><i class="fas fa-sign-out-alt" style="width:16px;"></i> התנתק</button>
     </div>
   </div>`;
   
@@ -272,7 +250,8 @@ function applyLogin(){
       if(pc) pc.textContent = d.count || '...';
   }).catch(()=>{});
 
-  checkAllowedAdmin(); 
+  // await כדי ש-_allowedMap ייטען לפני כל שאר האתחול
+  await checkAllowedAdmin(); 
   loadFeed(); setTimeout(loadAd,3000); setInterval(loadAd, 60*60*1000); initDark(); initNotifications();
 }
 
@@ -395,21 +374,32 @@ document.addEventListener('click',e=>{
     if(picker && picker.classList.contains('show')) {
         if(!picker.contains(e.target) && !e.target.closest('.rxn-add-btn')){
             picker.classList.remove('show');
+            picker.style.display = 'none';
             activePicker = null;
         }
     }
 });
 
 function openPicker(ev,msgId){
-  ev.stopPropagation();activePicker=msgId; const p=document.getElementById('emojiPicker');
-  p.style.display='grid'; const rect=ev.currentTarget.getBoundingClientRect();
-  p.style.top=Math.max(64, rect.top-p.offsetHeight-8)+'px'; p.style.left=Math.max(8, rect.right-p.offsetWidth)+'px';
-  p.classList.add('show');
+  ev.stopPropagation();
+  activePicker=msgId;
+  const p=document.getElementById('emojiPicker');
+  // תחילה הצג כדי לחשב גובה
+  p.style.display='grid';
+  requestAnimationFrame(()=>{
+    const rect=ev.currentTarget.getBoundingClientRect();
+    const pickerH = p.offsetHeight || 220;
+    const pickerW = p.offsetWidth || 280;
+    const top = rect.top - pickerH - 8;
+    p.style.top = Math.max(64, top) + 'px';
+    p.style.left = Math.max(8, rect.right - pickerW) + 'px';
+    p.classList.add('show');
+  });
 }
 
 function pickEmoji(em){
     const p = document.getElementById('emojiPicker');
-    if(p) p.classList.remove('show');
+    if(p) { p.classList.remove('show'); p.style.display='none'; }
     if(activePicker) doReact(activePicker,em);
     activePicker = null;
 }
@@ -995,7 +985,15 @@ async function saveEditMsg(){
 }
 
 /* ── MISC UI FUNCTIONS (RESTORED) ── */
-function toggleChatMinimize(){ const panel=document.getElementById('adminChatPanel'); panel.classList.toggle('minimized'); document.getElementById('chatMinimizeBtn').innerHTML=panel.classList.contains('minimized')?'<i class="fas fa-expand-alt"></i>':'<i class="fas fa-minus"></i>'; if(document.getElementById('adInChat')&&_adInChatData){document.getElementById('adInChat').style.display=panel.classList.contains('minimized')?'flex':'none';} }
+function toggleChatMinimize(){
+  const panel=document.getElementById('adminChatPanel');
+  if(!panel) return;
+  panel.classList.toggle('minimized');
+  const btn=document.getElementById('chatMinimizeBtn');
+  if(btn) btn.innerHTML=panel.classList.contains('minimized')?'<i class="fas fa-expand-alt"></i>':'<i class="fas fa-minus"></i>';
+  const adInChat=document.getElementById('adInChat');
+  if(adInChat&&_adInChatData) adInChat.style.display=panel.classList.contains('minimized')?'flex':'none';
+}
 function toggleDark(){const on=document.body.classList.toggle('dark');document.getElementById('darkBtn').classList.toggle('active',on);localStorage.setItem('shaagat_dark',on?'1':'0');}
 function initDark(){if(localStorage.getItem('shaagat_dark')==='1'){document.body.classList.add('dark');document.getElementById('darkBtn')?.classList.add('active');}}
 
