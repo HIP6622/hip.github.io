@@ -177,11 +177,21 @@ header{ background:#fff;border-bottom:1px solid rgba(0,0,0,.08); height:56px;pad
 .bubble-vid video{width:100%;border-radius:12px;background:#000;}
 .bubble-vid video.portrait{width:auto;max-width:100%;max-height:480px;display:block;margin:0 auto;}
 .bubble-vid iframe{max-width:100%;border-radius:12px;}
+
+/* תיקון עיצוב להטמעת HTML - מתאים גם לצר וגם לרחב */
+.bubble-html{margin-top:9px; border-radius:12px; overflow:hidden; width:100%; max-width:100%; background:#fff; position:relative;}
+.bubble-html iframe{width:100%; border:none; display:block; min-height:200px; resize:vertical; overflow:auto;}
+
 .vid-btn{display:inline-flex;align-items:center;gap:6px;background:#1a56db;color:#fff;padding:7px 15px;border-radius:99px;font-size:13px;font-weight:700;text-decoration:none;}
 .bubble-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
 .bubble-divider{border:none;border-top:1.5px solid #e5e7eb;margin:10px 0;width:100%;}
 .lnk-btn{display:inline-flex;align-items:center;gap:5px;background:#f3f4f6;border-radius:99px;padding:6px 13px;font-size:13px;font-weight:600;color:#374151;text-decoration:none;border:none;}
 .bubble-foot{display:flex;align-items:center;gap:5px;margin-top:2px;flex-wrap:wrap;padding-right:10px;}
+
+/* תגיות (תוויות) */
+.post-tags-row { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+.post-tag { display:inline-flex; align-items:center; background:#f3f4f6; color:#4b5563; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; transition:background 0.2s; border:1px solid transparent; }
+.post-tag:hover { background:#e5e7eb; border-color:#d1d5db; color:#111; }
 
 /* REACTIONS */
 .rxn-row{display:contents;}
@@ -213,6 +223,7 @@ header{ background:#fff;border-bottom:1px solid rgba(0,0,0,.08); height:56px;pad
 
 /* Admin action buttons */
 .msg-action-btn{ background:rgba(255,255,255,.93);border:1px solid #e5e7eb;border-radius:6px; padding:0 7px;height:22px;box-shadow:0 1px 4px rgba(0,0,0,.10); display:inline-flex;align-items:center;gap:3px; font-size:11px;cursor:pointer;font-family:'Heebo',sans-serif; font-weight:600;color:#888;transition:color .12s,border-color .12s;}
+.msg-action-btn:hover{color:#dc2626;border-color:#fca5a5;}
 .msg-action-btn.quote:hover{color:#1a56db;border-color:#93c5fd;}
 .msg-action-btn.edit:hover{color:#059669;border-color:#6ee7b7;}
 .msg-action-btn.del:hover{color:#e02020;border-color:#fca5a5;}
@@ -282,6 +293,10 @@ header{ background:#fff;border-bottom:1px solid rgba(0,0,0,.08); height:56px;pad
 #updateModeHdrBtn.no-active:hover{background:#ffedd5;color:#c2410c;}
 #updateModeHdrBtn.no-active::after{ content:'';position:absolute;top:5px;right:5px; width:6px;height:6px;border-radius:50%; background:#ea580c;border:1.5px solid #fff;}
 
+/* תפריט מנהל חדש בפרופיל */
+#userMenu { position: absolute; top: 54px; left: 0; background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; box-shadow: 0 12px 36px rgba(0,0,0,.15); z-index: 900; min-width: 220px; overflow: hidden; font-family: 'Heebo', sans-serif; animation: pickerPop 0.2s ease-out; }
+body.dark #userMenu { background: #1a1a2e; border-color: #333; }
+
 #updateModePopover{ position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%); background:#fff;border:1.5px solid #e5e7eb;border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.13);z-index:300; min-width:220px;overflow:hidden; animation:pickerPop .14s ease-out;direction:rtl;display:none;}
 #updateModePopover.open{display:block;}
 .ump-hdr{padding:10px 14px 6px;font-size:11px;font-weight:800;color:#9ca3af;border-bottom:1px solid #f3f4f6;}
@@ -309,7 +324,7 @@ header{ background:#fff;border-bottom:1px solid rgba(0,0,0,.08); height:56px;pad
 #adminMsgsBtn .unread-badge{position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:50%;background:#e02020;border:2px solid #fff;display:none;}
 #adminMsgsBtn .unread-badge.show{display:block;}
 
-/* DARK MODE */
+/* DARK MODE - נשאר תקין כבקשתך */
 body.dark{background:#0f0f15;color:#e5e7eb;}
 body.dark header{background:#1a1a2e;border-color:#2a2a40;}
 body.dark .bubble{background:#1e1e30;color:#e5e7eb;}
@@ -320,6 +335,9 @@ body.dark .msg-meta-name{color:#aaa;}
 body.dark .msg-meta-time{color:#666;}
 body.dark #feedWrap{background:#0f0f15;}
 body.dark .hdr-name{color:#fff;}
+/* תגיות במצב לילה */
+body.dark .post-tag { background: #374151; color: #d1d5db; }
+body.dark .post-tag:hover { background: #4b5563; color: #fff; }
 
 /* SEARCH */
 #searchBar{position:absolute;top:50%;left:100%;margin-left:6px;transform:translateY(-50%);background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,.12);display:none;align-items:center;gap:6px;padding:5px 10px 5px 8px;z-index:200;width:300px;white-space:nowrap;animation:searchPop .15s ease-out;}
