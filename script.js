@@ -1,3 +1,4 @@
+window._cardData = {};
 const BACKEND = 'https://hiphopruzbcrd.pythonanywhere.com';
 const GOOGLE_CLIENT_ID = '548333676754-ohvlnp1nfjpc1jnbkdfmr9hpccaj508i.apps.googleusercontent.com';
 const LOGO = 'https://i.ibb.co/pBvLbsG3/ed89a1453931.png';
@@ -22,11 +23,30 @@ let _allowedMap = {}, _rbacData = {}, _writePerm = null, _adInChatData = null;
 let _updateMode=false, _updateUntil='';
 
 let siteGlobalSettings = { title: "בינה ודעה", blockedEmails: [], commentsEnabled: true };
-try{ const locS = localStorage.getItem('siteGlobalSettings'); if(locS) siteGlobalSettings = JSON.parse(locS); } catch(e){}
+
+/* ── SETTINGS & EXPORT ── */
+async function fetchSiteSettings() {
+    try {
+        const r = await fetch(BACKEND + '/api/settings');
+        const contentType = r.headers.get("content-type");
+        if (r.ok && contentType && contentType.includes("application/json")) {
+            siteGlobalSettings = await r.json();
+        } else {
+            siteGlobalSettings = { title: "בינה ודעה", commentsEnabled: true, blockedEmails: [] };
+        }
+        if (siteGlobalSettings.commentsEnabled === undefined) siteGlobalSettings.commentsEnabled = true;
+        if (typeof initGlobalSettings === "function") initGlobalSettings();
+    } catch (e) {
+        siteGlobalSettings = { title: "בינה ודעה", commentsEnabled: true, blockedEmails: [] };
+        if (typeof initGlobalSettings === "function") initGlobalSettings();
+    }
+}
+window.addEventListener('load', fetchSiteSettings);
 
 function initGlobalSettings() {
     document.getElementById('pageTitle').innerText = siteGlobalSettings.title;
-    document.getElementById('hdrChannelName').innerHTML = `${esc(siteGlobalSettings.title)} - <span style="color:#1a56db">${CHANNELS.find(c=>c.id===currentChannelId)?.name||'כללי'}</span>`;
+    const hdr = document.getElementById('hdrChannelName');
+    if (hdr) hdr.innerHTML = `${esc(siteGlobalSettings.title)} - <span style="color:#1a56db">${CHANNELS.find(c=>c.id===currentChannelId)?.name||'כללי'}</span>`;
     const logT = document.getElementById('loginSiteTitle'); if(logT) logT.innerText = siteGlobalSettings.title;
 }
 
@@ -94,9 +114,8 @@ async function checkAllowedAdmin(){
     if(role === 'super' || role === 'supervisor' || role === 'manager') {
         document.getElementById('rightSidebar').classList.add('show');
         document.getElementById('adminChatPanel').classList.add('show');
+        document.getElementById('adminComposeBar').classList.add('show');
     }
-
-    document.getElementById('adminComposeBar').classList.add('show');
     
     const displayName = _allowedMap[me.email.toLowerCase()]?.name || me.name;
     document.getElementById('composerNameBadge').innerText = 'כותב בתור: ' + displayName;
@@ -113,7 +132,6 @@ async function checkAllowedAdmin(){
   if(isSuperAdmin()){
     document.getElementById('adminComposeBar')?.classList.remove('blocked');
     document.getElementById('blockNotice')?.classList.remove('show');
-    loadAdminUsers(); setInterval(loadAdminUsers, 30000);
   }
 }
 
@@ -129,28 +147,26 @@ async function loadAllowedMap(){
     });
     _allowedMap[ADMIN_EMAIL.toLowerCase()]={name:'דוד',picture:me?.picture||'', role:'super'};
     renderChannels();
-    // תיקון RBAC: לאחר טעינת המפה נבנה מחדש את תפריט המשתמש עם ההרשאות הנכונות
     if(me) refreshUserMenu();
   }catch(ex){}
 }
 
-// בונה מחדש את תפריט המשתמש לאחר שנטען _allowedMap (תיקון race condition של RBAC)
 function refreshUserMenu(){
   if(!me) return;
   const role = getRole();
   const avatarHtml=me.picture?`<img src="${escAttr(me.picture)}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid #1a56db;box-shadow:0 2px 6px rgba(0,0,0,0.1)">`:`<div style="width:34px;height:34px;border-radius:50%;background:#1a56db;color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.1)">${esc(me.name[0].toUpperCase())}</div>`;
   let adminMenuHtml = '';
-  if(role === 'super' || role === 'supervisor') {
+  if(role === 'super' || role === 'supervisor' || role === 'manager') {
       adminMenuHtml += `
         <div style="border-top:1px solid #e5e7eb; margin-top:8px; padding-top:8px;">
-          <div style="padding:0 14px 6px;font-size:11px;font-weight:800;color:#1a56db;text-transform:uppercase;letter-spacing:0.5px;">ניהול הערוץ</div>
+          <div style="padding:0 14px 6px;font-size:11px;font-weight:800;color:#1a56db;text-transform:uppercase;letter-spacing:0.5px;">ניהול האתר</div>
           <button onclick="openLeaderboard()" style="width:100%;padding:8px 14px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:10px;"><i class="fas fa-chart-bar" style="color:#ea580c;width:16px;"></i> סטטיסטיקות</button>
           <button onclick="openReportsModal()" style="width:100%;padding:8px 14px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:10px;"><i class="fas fa-flag" style="color:#dc2626;width:16px;"></i> דיווחי משתמשים</button>
-          <button onclick="openManageAdmins()" style="width:100%;padding:8px 14px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:10px;"><i class="fas fa-user-cog" style="color:#1a56db;width:16px;"></i> יוצרים וצוות</button>
       `;
   }
   if(role === 'super') {
       adminMenuHtml += `
+          <button onclick="openManageAdmins()" style="width:100%;padding:8px 14px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:10px;"><i class="fas fa-user-cog" style="color:#1a56db;width:16px;"></i> יוצרים וצוות</button>
           <button onclick="openSiteSettings()" style="width:100%;padding:8px 14px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:10px;"><i class="fas fa-tools" style="color:#7c3aed;width:16px;"></i> הגדרות וחסימות</button>
           <button onclick="openWritePerms()" style="width:100%;padding:8px 14px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:10px;"><i class="fas fa-pen" style="color:#059669;width:16px;"></i> הרשאות כתיבה</button>
           <button onclick="openAdPanel()" style="width:100%;padding:8px 14px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:10px;"><i class="fas fa-ad" style="color:#ca8a04;width:16px;"></i> פרסומות</button>
@@ -223,70 +239,40 @@ async function applyLogin(){
   const av=document.getElementById('userAvatar');
   const avatarHtml=me.picture?`<img src="${escAttr(me.picture)}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid #1a56db;box-shadow:0 2px 6px rgba(0,0,0,0.1)">`:`<div style="width:34px;height:34px;border-radius:50%;background:#1a56db;color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.1)">${esc(me.name[0].toUpperCase())}</div>`;
   
-  // בנה skeleton מינימלי עם ה-avatar — refreshUserMenu() ישלים את התפריט לאחר טעינת ה-map
-  av.innerHTML=`<div style="cursor:pointer" onclick="toggleUserMenu(event)">${avatarHtml}</div>
-  <div id="userMenu" style="display:none;position:absolute;top:54px;left:0;background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 12px 36px rgba(0,0,0,.15);z-index:900;min-width:220px;overflow:hidden;font-family:'Heebo',sans-serif;animation:pickerPop 0.2s ease-out;">
-    <div style="padding:16px 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f3f4f6;">
-      ${avatarHtml}
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:800;color:#111;">${esc(me.name)}</div>
-        <div style="font-size:11px;color:#6b7280;">${esc(me.email)}</div>
-        <div style="font-size:10px;font-weight:800;color:#1a56db;" id="menuRoleDisplay">...</div>
-      </div>
-    </div>
-    <div style="border-top:1px solid #e5e7eb; margin-top:4px; padding:4px 0;">
-      <button onclick="doLogout()" style="width:100%;padding:10px 16px;text-align:right;background:none;border:none;cursor:pointer;font-size:13px;font-weight:700;color:#dc2626;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'"><i class="fas fa-sign-out-alt" style="width:16px;"></i> התנתק</button>
-    </div>
-  </div>`;
+  av.innerHTML=`<div style="cursor:pointer" onclick="toggleUserMenu(event)">${avatarHtml}</div><div id="userMenu" style="display:none;"></div>`;
   
   const mailBtn = document.querySelector('a[title="פנייה למנהל"]');
-  if(mailBtn) { mailBtn.href = "mailto:hip@hamakom.ovh?subject=" + encodeURIComponent("בקשר לאתר בינה ודעה"); }
+  if(mailBtn) {
+      mailBtn.href = "mailto:0548537646a@gmail.com?subject=" + encodeURIComponent("לכבוד מנהל אתר בינה ודעה");
+      mailBtn.target = "_blank";
+  }
 
   document.getElementById('loginScreen').style.display='none'; document.getElementById('app').style.display='flex'; document.getElementById('leftSidebar').style.display='flex';
   renderChannels();
   
-  fetch(BACKEND+'/api/users_count').then(r=>r.json()).then(d=>{
-      const pc = document.getElementById('publicUserCount');
-      if(pc) pc.textContent = d.count || '...';
-      updateEmailCountBadge(d.count);
-  }).catch(()=>{});
+  // רישום משתמש בשרת לספירה
+  fetch(BACKEND+'/feed_login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(me) })
+    .then(r=>r.json()).then(d=>{
+        const pc = document.getElementById('publicUserCount');
+        if(pc) pc.textContent = d.count || '0';
+    }).catch(()=>{});
 
-  // await כדי ש-_allowedMap ייטען לפני כל שאר האתחול
   await checkAllowedAdmin(); 
   loadFeed(); setTimeout(loadAd,3000); setInterval(loadAd, 60*60*1000); initDark(); initNotifications();
-}
-
-async function loadAdminUsers(){
-  try{
-    const r=await fetch(BACKEND+'/api/users_count');
-    const d=await r.json();
-    const ucm = document.getElementById('adminUserCountMenu');
-    if(ucm) ucm.textContent = d.count;
-  }catch(e){}
 }
 
 async function handleGoogle(resp) {
   let payload = {};
   try {
-    // פיענוח בטוח של הנתונים מגוגל (JWT)
     const base64Url = resp.credential.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    
-    // הוספת Padding במידה וחסר (קריטי למניעת שגיאות atob)
     const pad = base64.length % 4;
     const paddedBase64 = pad ? base64 + '='.repeat(4 - pad) : base64;
-
-    // פענוח שתומך בתווים בעברית (UTF-8)
     const jsonPayload = decodeURIComponent(window.atob(paddedBase64).split('').map(function(c) {
       return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(''));
-
     payload = JSON.parse(jsonPayload);
-  } catch (e) {
-    console.error("שגיאה בפענוח נתוני גוגל:", e);
-    alert("חלה שגיאה טכנית בהתחברות. נסה שוב.");
-    return;
-  }
+  } catch (e) { alert("חלה שגיאה טכנית בהתחברות. נסה שוב."); return; }
 
   const email = (payload.email || '').toLowerCase();
   if (!email || !email.includes('@')) return;
@@ -294,7 +280,6 @@ async function handleGoogle(resp) {
   const picture = payload.picture || '';
   let displayName = '';
 
-  // בדיקה מול רשימת המורשים כדי למשוך שם מותאם אישית
   try {
     const lr = await fetch(BACKEND + '/allowed_list');
     const ld = await lr.json();
@@ -309,9 +294,12 @@ async function handleGoogle(resp) {
   await verifyAndLogin({ email, name: displayName, picture });
 }
 
-// תמיכה ב-RGB ובטקסט מודגש/נטוי
 function editorToMarkdown(el) {
-  let html = el.innerHTML;
+  const clone = el.cloneNode(true);
+  const quoteDiv = clone.querySelector('[data-quote-preview]');
+  if (quoteDiv) quoteDiv.remove();
+  
+  let html = clone.innerHTML;
   html = html.replace(/<br\s*\/?>/gi, '\n');
   html = html.replace(/<\/div>/gi, '\n').replace(/<div[^>]*>/gi, '');
   html = html.replace(/<\/p>/gi, '\n').replace(/<p[^>]*>/gi, '');
@@ -322,7 +310,6 @@ function editorToMarkdown(el) {
   html = html.replace(/<u\b[^>]*>(.*?)<\/u>/gi, '__$1__');
   html = html.replace(/<s\b[^>]*>(.*?)<\/s>/gi, '~~$1~~');
   html = html.replace(/<a[^>]+href="([^"]+)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)');
-  
   html = html.replace(/<span[^>]+style="[^"]*color:\s*([^;"]+)[^"]*"[^>]*>(.*?)<\/span>/gi, '\x02color:$1\x03$2\x02/color\x03');
   html = html.replace(/<font[^>]+color="([^"]+)"[^>]*>(.*?)<\/font>/gi, '\x02color:$1\x03$2\x02/color\x03');
   
@@ -330,7 +317,6 @@ function editorToMarkdown(el) {
   txt.innerHTML = html.replace(/<[^>]+>/g, '');
   return txt.value.trim();
 }
-
 
 function rich(t){
   if(!t)return''; let s=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -357,13 +343,11 @@ function buildMsg(e){
   let btns=''; if(e.buttons&&e.buttons.length)btns='<div class="bubble-btns">'+e.buttons.map(b=>`<a class="lnk-btn" href="${escAttr(b.url)}" target="_blank">${esc(b.text)}</a>`).join('')+'</div>';
   if(e.htmlCode){ const safeHtml=e.htmlCode.replace(/`/g,'&#96;'); media+=`<div class="bubble-html" style="margin-top:9px;border-radius:12px;overflow:hidden;width:100%;"><iframe srcdoc="${safeHtml.replace(/"/g,'&quot;')}" style="width:100%;border:none;display:block;" sandbox="allow-scripts allow-popups" scrolling="no" onload="this.style.height=this.contentDocument.body.scrollHeight+'px'"></iframe></div>`; }
   
-  // תגיות
   let tagsHtml='';
   if(e.tags && e.tags.length){
       tagsHtml = '<div class="post-tags-row" style="margin-top:8px;">' + e.tags.map(t=>`<span class="post-tag" onclick="document.getElementById('searchInput').value='${escAttr(t)}';onSearch('${escAttr(t)}')"><i class="fas fa-tag"></i> ${esc(t)}</span>`).join('') + '</div>';
   }
 
-  // ציטוטים מובנים
   let quoteHtml='';
   if(e.quote) {
       quoteHtml = `<div class="quote-block" onclick="(function(){const el=document.querySelector('[data-id=\"${escAttr(e.quote.id||'')}\"]');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid #1a56db';setTimeout(()=>el.style.outline='',1500);}})()">
@@ -443,7 +427,6 @@ async function doReact(msgId,emoji){
   const d=await r.json();if(d.status==='ok' && bar)renderRxn(msgId,d.reactions, bar); }catch(e){}
 }
 
-// מחיקת הודעות
 async function deleteFeedMsg(id){
   if(!confirm('למחוק הודעה זו לצמיתות?')) return;
   try{
@@ -463,7 +446,7 @@ function quoteFeedMsg(id){
   const rawText=(entry.text||'').trim();
   const lines=rawText.split('\n');
   const preview=lines.slice(0,2).join(' ').substring(0,100)+(rawText.length>100?'…':'');
-  ed._quoteData={id, text:rawText, preview};
+  ed._quoteData={id, text:rawText, preview, sender: entry.sender};
   ed.innerHTML='';
   const qDiv=document.createElement('div');
   qDiv.setAttribute('data-quote-preview','1');
@@ -482,6 +465,7 @@ function quoteFeedMsg(id){
   window.getSelection().addRange(range);
   document.getElementById('adminComposeBar')?.scrollIntoView({behavior:'smooth',block:'end'});
   onComposeChange();
+  updateAttachPreview();
 }
 
 function cancelQuote(){
@@ -489,9 +473,9 @@ function cancelQuote(){
   ed.querySelector('[data-quote-preview]')?.remove();
   ed._quoteData=null;
   onComposeChange();
+  updateAttachPreview();
 }
 
-// מערכת דיווחים — modal מודרני
 let _reportTargetMsgId = null;
 function reportMsg(msgId) {
     if(!me) { showToast('יש להתחבר כדי לדווח', 'error'); return; }
@@ -569,8 +553,6 @@ async function dismissReport(reportId) {
     } catch(e) {}
 }
 
-
-/* ── COMMENTS ── */
 function openComments(msgId){activeCmtMsgId=msgId;document.getElementById('commentsPanel').classList.add('open');loadComments(msgId);}
 function closeComments(){document.getElementById('commentsPanel').classList.remove('open');activeCmtMsgId=null;}
 
@@ -638,7 +620,6 @@ async function delCmt(msgId,cid){
   }catch(e){}
 }
 
-/* ── FEED POLLING ── */
 async function loadFeed(){
   setLoading(true);
   try{
@@ -703,7 +684,6 @@ function updateScrollBtn(){const btn=document.getElementById('scrollDownBtn'); i
 document.getElementById('feedWrap').addEventListener('scroll',function(){atBottom=(this.scrollHeight-this.scrollTop-this.clientHeight)<80;updateScrollBtn();},{passive:true});
 function setLoading(v){document.getElementById('prog').classList.toggle('on',v);}
 
-/* ══ PERMISSIONS (RBAC & GLOBAL) ══ */
 async function pollWritePerm(){
   if(!isAdmin())return;
   try{
@@ -737,7 +717,6 @@ function applyWritePerm(perm, rbac){
   notice.classList.toggle('show', !canWriteHere);
 }
 
-/* ══ WRITE PERMISSIONS MODAL ══ */
 function openWritePerms(){
   document.getElementById('writePermModal').style.display='flex';
   renderWritePermDropdown(_writePerm?.emails||[]);
@@ -764,7 +743,6 @@ async function toggleWritePerm(targetEmail,e){
   }catch(e){}
 }
 
-/* ══ UPDATE MODE ══ */
 function onUpdateModeHdrClick(e){
   e.stopPropagation();
   if(isSuperAdmin()){
@@ -851,8 +829,6 @@ document.addEventListener('click',function(e){
   if(pop&&pop.classList.contains('open')&&!pop.contains(e.target)&&!hdrBtn?.contains(e.target)){ pop.classList.remove('open'); }
 });
 
-
-/* ── LEADERBOARD ── */
 let lbData = [];
 function openLeaderboard() { document.getElementById('leaderboardModal').style.display = 'flex'; loadLeaderboardData(); }
 function closeLeaderboard() { document.getElementById('leaderboardModal').style.display = 'none'; }
@@ -894,32 +870,11 @@ function switchLbView(viewType) {
   }
 }
 
-/* ── SETTINGS & EXPORT ── */
-async function fetchSiteSettings() {
-    try {
-        const r = await fetch(BACKEND + '/api/settings');
-        if(r.ok) {
-            siteGlobalSettings = await r.json();
-            if(siteGlobalSettings.commentsEnabled === undefined) siteGlobalSettings.commentsEnabled = true;
-            initGlobalSettings();
-        }
-    } catch(e) {}
-}
-window.addEventListener('load', fetchSiteSettings);
-
 function openSiteSettings(){
     document.getElementById('siteSettingsModal').classList.add('open');
-    document.getElementById('settingsSiteTitle').value = siteGlobalSettings.title || "בינה ודעה";
-    document.getElementById('settingsCommentsEnable').checked = siteGlobalSettings.commentsEnabled;
     renderBlockedUsers();
 }
 function closeSiteSettings(){ document.getElementById('siteSettingsModal').classList.remove('open'); }
-
-async function saveSiteTitle(){
-    const val = document.getElementById('settingsSiteTitle').value.trim(); if(!val) return;
-    siteGlobalSettings.title = val; initGlobalSettings();
-    if(isSuperAdmin()) { await fetch(BACKEND+'/api/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({admin_email:me.email, title:val})}); alert('שם האתר עודכן בשרת!'); }
-}
 
 async function saveCommentsSettings() {
     const isEnabled = document.getElementById('settingsCommentsEnable').checked; siteGlobalSettings.commentsEnabled = isEnabled;
@@ -946,12 +901,6 @@ async function unblockUser(email){
     if(isSuperAdmin()) { await fetch(BACKEND+'/api/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({admin_email:me.email, blockedEmails:siteGlobalSettings.blockedEmails})}); }
 }
 
-async function assignRbac(){
-    const email = document.getElementById('rbacEmail').value.trim().toLowerCase(); const channel = document.getElementById('rbacChannel').value; if(!email) return;
-    if(isSuperAdmin()) { const r = await fetch(BACKEND+'/api/rbac', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({admin_email:me.email, target_email:email, channel:channel, action:'add'})}); if(r.ok) alert(`הרשאה לערוץ ${channel} הוענקה בהצלחה ל-${email}`); }
-    document.getElementById('rbacEmail').value = '';
-}
-
 async function exportEmailsToGroups() {
     if(!isSuperAdmin()) return;
     try {
@@ -963,13 +912,12 @@ async function exportEmailsToGroups() {
     } catch(e) { alert("שגיאה בייצוא המיילים"); }
 }
 
-/* ── UI HELPERS & EDITOR ── */
 function closeLightbox(){document.getElementById('lightbox').classList.remove('show');document.getElementById('lbImg').src='';}
 function openLightbox(src){document.getElementById('lbImg').src=src;document.getElementById('lightbox').classList.add('show');}
 function clearCompose(){document.getElementById('composeEditor').innerHTML='';composeImgUrl='';composeVidUrl='';composeHtmlCode='';composeBtns=[]; document.getElementById('composeEditor')._quoteData=null; updateAttachPreview();}
 
 function showPreview(){
-  const ed=document.getElementById('composeEditor'); const text=ed.innerText.trim();
+  const ed=document.getElementById('composeEditor'); const text=editorToMarkdown(ed).trim();
   if(!text && !composeImgUrl && !composeHtmlCode && !composeVidUrl){ alert('אין מה להציג.'); return; }
   const mockEntry = { id: 'preview', channel: currentChannelId, profile: composeProfile, text: text, imgUrl: composeImgUrl, videoUrl: composeVidUrl, htmlCode: composeHtmlCode, sender: _allowedMap[me?.email?.toLowerCase()]?.name || me.name, time: 'עכשיו', ts: Date.now(), buttons: composeBtns, quote: ed._quoteData };
   document.getElementById('previewModalBody').innerHTML = buildMsg(mockEntry); document.getElementById('previewModal').style.display = 'flex';
@@ -1080,7 +1028,6 @@ async function saveEditMsg(){
   }catch(e){alert('שגיאת רשת');} finally{btn.innerHTML='<i class="fas fa-check" style="font-size:14px"></i>';btn.disabled=false;}
 }
 
-/* ── MISC UI FUNCTIONS (RESTORED) ── */
 function toggleChatMinimize(){
   const panel=document.getElementById('adminChatPanel');
   if(!panel) return;
@@ -1113,7 +1060,6 @@ async function doSearch(q){
   results.forEach(e=>{if(rxnCache[e.id])renderRxn(e.id,rxnCache[e.id]);});
 }
 
-/* ── ADS ── */
 async function loadAd(){
   try{ const r=await fetch(BACKEND+'/ad_get');const d=await r.json(); if(d.side&&(d.side.imageUrl||d.side.htmlUrl||d.side.htmlCode)){showAdSide(d.side);}else{hideAdSide();} if(d.popup&&(d.popup.imageUrl||d.popup.htmlUrl||d.popup.htmlCode)&&shouldShowAd()){showAdPopup(d.popup);} }catch(e){}
 }
@@ -1173,10 +1119,6 @@ async function deleteAd(type){
 }
 function showAdMsg(txt,color){ const el=document.getElementById('adMsg');el.textContent=txt;el.style.color=color==='green'?'#16a34a':'#dc2626';el.style.display='block'; setTimeout(()=>el.style.display='none',2000); }
 
-
-/* ══════════════════════════════════════════
-   צ'אט מנהלים — Admin Internal Chat
-   ══════════════════════════════════════════ */
 
 const CHAT_COLORS=['#3b82f6','#7c3aed','#059669','#d97706','#dc2626','#db2777'];
 const chatCol=s=>CHAT_COLORS[(s||'').charCodeAt(0)%CHAT_COLORS.length];
@@ -1300,7 +1242,6 @@ function showChatCtx(ev,msg,isMe){
   });
 }
 function hideChatCtx(){ document.getElementById('chatCtxMenu')?.classList.remove('show'); }
-document.addEventListener('click',e=>{if(!e.target.closest('#chatCtxMenu')) hideChatCtx();});
 
 function copyChatMsg(id){
   const bub=document.querySelector(`.chat-bub[data-id="${id}"]`);
@@ -1372,7 +1313,6 @@ function handleChatInputKey(e){
   if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); sendChatMsg();}
 }
 
-// checkChatMention — @mention dropdown בסיסי
 function checkChatMention(inp) {
   const val = inp.value;
   const atIdx = val.lastIndexOf('@');
@@ -1402,10 +1342,6 @@ function insertMention(name) {
   inp.focus();
 }
 
-/* ══════════════════════════════════════════
-   הודעות למנהלים — Admin Broadcast Messages
-   ══════════════════════════════════════════ */
-
 let _adminMsgsKnownIds = new Set();
 
 async function loadAdminMsgs() {
@@ -1417,10 +1353,8 @@ async function loadAdminMsgs() {
     const newMsgs = msgs.filter(m => !_adminMsgsKnownIds.has(m.id));
     if (!newMsgs.length) return;
     newMsgs.forEach(m => { _adminMsgsKnownIds.add(m.id); adminMsgsUnread++; });
-    // עדכן badge על כפתור הפעמון (אם קיים)
     const badge = document.getElementById('adminMsgsBadge');
     if (badge) { badge.textContent = adminMsgsUnread; badge.style.display = adminMsgsUnread > 0 ? 'flex' : 'none'; }
-    // עדכן תוכן ה-modal אם הוא פתוח
     if (document.getElementById('adminMsgsModal')?.style.display === 'flex') renderAdminMsgs(msgs);
   } catch(e) {}
 }
@@ -1447,7 +1381,6 @@ async function openAdminMsgs() {
   adminMsgsUnread = 0;
   const badge = document.getElementById('adminMsgsBadge');
   if (badge) badge.style.display = 'none';
-  // טעינה עדכנית מהשרת
   try {
     const r = await fetch(BACKEND + '/admin_msgs_get');
     const d = await r.json();
@@ -1456,7 +1389,6 @@ async function openAdminMsgs() {
     const body = document.getElementById('adminMsgsBody');
     if (body) body.innerHTML = '<div style="color:red;text-align:center;">שגיאה בטעינה</div>';
   }
-  // הצג שורת שליחה רק ל-super
   const sendRow = document.getElementById('adminMsgsSendRow');
   if (sendRow) sendRow.style.display = isSuperAdmin() ? 'flex' : 'none';
 }
@@ -1481,10 +1413,6 @@ async function sendAdminMsg() {
     if (d.status === 'ok') renderAdminMsgs(d.msgs || []);
   } catch(e) {}
 }
-
-/* ══════════════════════════════════════════
-   ניהול יוצרים וצוות — Manage Admins Modal
-   ══════════════════════════════════════════ */
 
 async function openManageAdmins() {
   document.getElementById('manageAdminsModal').style.display = 'flex';
@@ -1532,7 +1460,6 @@ async function addAdmin() {
   const name = document.getElementById('newAdminName')?.value.trim();
   const slug = document.getElementById('newAdminSlug')?.value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
   const role = document.getElementById('newAdminRole')?.value || 'user';
-  const msgEl = document.getElementById('adminMsgResult');
   if (!email || !name) { showAdminMsg('יש למלא אימייל ושם', 'red'); return; }
   if (!email.includes('@')) { showAdminMsg('אימייל לא תקין', 'red'); return; }
   const myRole = getRole();
@@ -1567,7 +1494,6 @@ async function removeAdmin(targetEmail) {
     });
     const d = await r.json();
     if (d.status === 'success') {
-      await new Promise(r => setTimeout(r, 400));
       await loadAllowedMap();
       await renderAdminsList();
       showAdminMsg('הוסר בהצלחה', 'green');
@@ -1584,40 +1510,28 @@ function showAdminMsg(txt, color) {
   setTimeout(() => el.style.display = 'none', 3000);
 }
 
-function updateEmailCountBadge(count) {
-  const badge = document.getElementById('hdrEmailCountBadge');
-  if(!badge) return;
-  if(count && count > 0) {
-    badge.textContent = count > 999 ? '999+' : count;
-    badge.style.display = 'block';
-  }
-}
-
-function initGoogle() {
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleGoogle,
-    auto_select: true
-  });
-  const saved = loadSavedUser();
-  if (saved) { verifyAndLogin(saved); return; }
-  google.accounts.id.renderButton(
-    document.getElementById('googleBtn'),
-    { theme: 'outline', size: 'large', locale: 'he', width: 240 }
-  );
-  google.accounts.id.prompt();
-}
-
 function tryInitGoogle() {
-  if (window.google && window.google.accounts) { initGoogle(); }
-  else { setTimeout(tryInitGoogle, 100); }
+  if (window.google && window.google.accounts) {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogle,
+        auto_select: true
+      });
+      const saved = loadSavedUser();
+      if (saved) { verifyAndLogin(saved); }
+      else {
+        google.accounts.id.renderButton(
+          document.getElementById('googleBtn'),
+          { theme: 'outline', size: 'large', locale: 'he', width: 240 }
+        );
+        google.accounts.id.prompt();
+      }
+  } else {
+      setTimeout(tryInitGoogle, 100);
+  }
 }
 
 setInterval(pollAll, 3000);
 
-// כי script.js נטען עם defer, ה-load event כבר ירה — קוראים ישירות
-if (document.readyState === 'complete') {
-  tryInitGoogle();
-} else {
-  window.addEventListener('load', tryInitGoogle);
-}
+if (document.readyState === 'complete') { tryInitGoogle(); } 
+else { window.addEventListener('load', tryInitGoogle); }
