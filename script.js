@@ -1112,10 +1112,10 @@ let _chatTypingTimer = null;
 async function loadAdminChat(){
   if(!isAdmin()) return;
   try{
-    const r=await fetch(BACKEND+'/chat_get?t=' + Date.now());
+    const r=await fetch(BACKEND+'/chat_messages?t=' + Date.now());
     const d=await r.json();
-    if(d.status!=='ok') return;
-    const msgs=d.chat||[];
+    if(d.status!=='success') return;
+    const msgs=d.messages||[];
     const sig=msgs.map(m=>m.id).join(',');
     if(sig===chatLastIds) return;
     const hadMsgs=chatLastIds!=='';
