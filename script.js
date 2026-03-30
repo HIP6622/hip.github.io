@@ -1,4 +1,3 @@
-window._cardData = {}; 
 const BACKEND = 'https://hiphopruzbcrd.pythonanywhere.com';
 const GOOGLE_CLIENT_ID = '548333676754-ohvlnp1nfjpc1jnbkdfmr9hpccaj508i.apps.googleusercontent.com';
 const LOGO = 'https://i.ibb.co/pBvLbsG3/ed89a1453931.png';
@@ -729,8 +728,11 @@ function applyWritePerm(perm, rbac){
     return;
   }
   
-  const canWriteHere = (role === 'manager' || role === 'supervisor' || role === 'super' || currentChannelId === _allowedMap[me.email.toLowerCase()]?.slug);
-  
+  const myEmail = me?.email?.toLowerCase();
+  const hasWritePerm = (_writePerm?.emails || []).includes(myEmail);
+  const isMySlugChannel = currentChannelId === _allowedMap[myEmail]?.slug;
+  const canWriteHere = (role === 'manager' || role === 'supervisor') || hasWritePerm || isMySlugChannel;
+
   bar.classList.toggle('blocked', !canWriteHere);
   notice.classList.toggle('show', !canWriteHere);
 }
@@ -892,37 +894,17 @@ function switchLbView(viewType) {
   }
 }
 
+/* ── SETTINGS & EXPORT ── */
 async function fetchSiteSettings() {
     try {
         const r = await fetch(BACKEND + '/api/settings');
-        const contentType = r.headers.get("content-type");
-        
-        if (r.ok && contentType && contentType.includes("application/json")) {
+        if(r.ok) {
             siteGlobalSettings = await r.json();
-        } else {
-            siteGlobalSettings = { 
-                title: "Bina VeDea", 
-                commentsEnabled: true, 
-                blockedEmails: [] 
-            };
-        }
-
-        if (siteGlobalSettings.commentsEnabled === undefined) {
-            siteGlobalSettings.commentsEnabled = true;
-        }
-
-        if (typeof initGlobalSettings === "function") {
+            if(siteGlobalSettings.commentsEnabled === undefined) siteGlobalSettings.commentsEnabled = true;
             initGlobalSettings();
         }
-    } catch (e) {
-        siteGlobalSettings = { 
-            title: "Bina VeDea", 
-            commentsEnabled: true, 
-            blockedEmails: [] 
-        };
-    }
+    } catch(e) {}
 }
-
 window.addEventListener('load', fetchSiteSettings);
 
 function openSiteSettings(){
@@ -1208,8 +1190,6 @@ function renderChatText(t){
   return s;
 }
 
-let _chatKnownIds = new Set();
-let _chatTypingUsers = {};
 let _chatTypingTimer = null;
 
 async function loadAdminChat(){
@@ -1219,7 +1199,7 @@ async function loadAdminChat(){
     const d=await r.json();
     if(d.status!=='success') return;
     const msgs=d.messages||[];
-    const sig=msgs.map(m=>m.id+(m.reactions?JSON.stringify(m.reactions):'')).join(',');
+    const sig=msgs.map(m=>m.id).join(',');
     if(sig===chatLastIds) return;
     const hadMsgs=chatLastIds!=='';
     chatLastIds=sig;
@@ -1237,24 +1217,20 @@ function renderAdminChat(msgs){
   if(!box) return;
   const empty=document.getElementById('chatEmptyMsg');
   const atBot=box.scrollHeight-box.scrollTop-box.clientHeight<80;
-
   if(!msgs.length){
     box.innerHTML='';
     if(empty){empty.style.display='block'; box.appendChild(empty);}
     return;
   }
   if(empty) empty.style.display='none';
-
   box.innerHTML='';
   let lastDate='', lastEmail='', lastMin='';
-
   msgs.forEach((msg,idx)=>{
     const isMe=msg.email===me?.email;
     const displayName=getDisplayName(msg.email,msg.sender);
     const picture=msg.picture||_allowedMap[(msg.email||'').toLowerCase()]?.picture||'';
     const msgMin=(msg.clientTime||msg.time||'').substring(0,5);
     const sameGroup=lastEmail===msg.email&&msgMin===lastMin;
-
     const d=msg.date||msg.clientDate||'';
     if(d&&d!==lastDate){
       const sep=document.createElement('div');
@@ -1263,10 +1239,8 @@ function renderAdminChat(msgs){
       box.appendChild(sep);
       lastDate=d;
     }
-
     const grp=document.createElement('div');
     grp.className='chat-grp'+(isMe?' me':'')+(!sameGroup&&idx>0?' gap':'');
-
     const avEl=document.createElement('div');
     avEl.className='chat-av';
     avEl.style.background=chatCol(displayName);
@@ -1277,10 +1251,8 @@ function renderAdminChat(msgs){
       img.onerror=()=>{img.style.display='none'; avEl.textContent=displayName[0].toUpperCase();};
       avEl.appendChild(img);
     } else { avEl.textContent=displayName[0].toUpperCase(); }
-
     const bubs=document.createElement('div');
     bubs.className='chat-bubs'+(isMe?' me':' other');
-
     if(!isMe&&!sameGroup){
       const nm=document.createElement('div');
       nm.className='chat-sender';
@@ -1288,7 +1260,6 @@ function renderAdminChat(msgs){
       nm.textContent=displayName;
       bubs.appendChild(nm);
     }
-
     const bub=document.createElement('div');
     bub.className='chat-bub '+(isMe?'me':'other');
     bub.dataset.id=msg.id;
@@ -1302,14 +1273,11 @@ function renderAdminChat(msgs){
     }
     bub.addEventListener('dblclick',ev=>{ev.preventDefault(); showChatCtx(ev,msg,isMe);});
     bubs.appendChild(bub);
-
     if(isMe){grp.appendChild(bubs); grp.appendChild(avEl);}
     else{grp.appendChild(avEl); grp.appendChild(bubs);}
     box.appendChild(grp);
-
     lastEmail=msg.email; lastMin=msgMin;
   });
-
   if(atBot) box.scrollTop=box.scrollHeight;
 }
 
@@ -1337,8 +1305,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('#chatCtxMenu')) hide
 function copyChatMsg(id){
   const bub=document.querySelector(`.chat-bub[data-id="${id}"]`);
   if(!bub) return;
-  const text=bub.innerText.replace(/\s+\d{2}:\d{2}$/,'').trim();
-  navigator.clipboard.writeText(text).catch(()=>{});
+  navigator.clipboard.writeText(bub.innerText.replace(/\s+\d{2}:\d{2}$/,'').trim()).catch(()=>{});
   hideChatCtx();
 }
 
@@ -1365,10 +1332,12 @@ async function pollChatTyping(){
   try{
     const r=await fetch(BACKEND+'/typing_status');
     const d=await r.json();
-    const others=(d.typers||[]).filter(n=>n!==me?.name);
+    const others=(d.typers||[]).filter(n=>n!==getDisplayName(me?.email,me?.name));
     const bar=document.getElementById('chatTypingBar');
-    if(others.length){bar.style.display='block'; bar.textContent=others.map(n=>getDisplayName('',n)).join(', ')+' מקלידים...';}
-    else{bar.style.display='none';}
+    if(bar){
+      if(others.length){bar.style.display='block'; bar.textContent=others.join(', ')+' מקלידים...';}
+      else{bar.style.display='none';}
+    }
   }catch(e){}
 }
 
@@ -1378,17 +1347,17 @@ async function pingChatPresence(){
     const r=await fetch(BACKEND+'/presence_ping',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:me.email,name:me.name,picture:me.picture})});
     const d=await r.json();
     const presEl=document.getElementById('chatPresenceCount');
-    if(presEl) presEl.textContent=(d.active||[]).length;
+    if(presEl) presEl.textContent=(d.active||[]).length||1;
   }catch(e){}
 }
 
 async function sendChatMsg(){
   const inp=document.getElementById('chatInput');
-  const text=inp.value.trim();
+  const text=(inp?.value||'').trim();
   if(!text||!me) return;
   const now=new Date();
   const clientTime=now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',hour12:false});
-  const clientDate=now.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'/');
+  const clientDate=now.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'});
   inp.value=''; inp.style.height='auto';
   clearTimeout(_chatTypingTimer);
   fetch(BACKEND+'/typing_stop',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:me.email})}).catch(()=>{});
@@ -1539,7 +1508,7 @@ async function renderAdminsList() {
     const myRole = getRole();
     list.innerHTML = users.map(u => {
       const pic = u.picture ? `<img src="${escAttr(u.picture)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">` : `<div style="width:36px;height:36px;border-radius:50%;background:#1a56db;color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;">${esc((u.name||u.email||'?')[0].toUpperCase())}</div>`;
-      const roleLabel = { super:'בעל אתר', supervisor:'פיקוח', manager:'מנהל', user:'יוצר' }[u.role] || u.role;
+      const roleLabel = { super:'בעל אתר', supervisor:'פיקוח', manager:'מנהל', user:'יוצר' }[u.role] || 'יוצר';
       const roleBadgeColor = { super:'#7c3aed', supervisor:'#dc2626', manager:'#1a56db', user:'#059669' }[u.role] || '#6b7280';
       const canDelete = isSuperAdmin() && u.email !== ADMIN_EMAIL.toLowerCase();
       const isMe = u.email === me?.email?.toLowerCase();
@@ -1598,6 +1567,7 @@ async function removeAdmin(targetEmail) {
     });
     const d = await r.json();
     if (d.status === 'success') {
+      await new Promise(r => setTimeout(r, 400));
       await loadAllowedMap();
       await renderAdminsList();
       showAdminMsg('הוסר בהצלחה', 'green');
@@ -1614,30 +1584,34 @@ function showAdminMsg(txt, color) {
   setTimeout(() => el.style.display = 'none', 3000);
 }
 
-function tryInitGoogle() {
-    if (window.google && window.google.accounts) {
-        initGoogle();
-    } else {
-        setTimeout(tryInitGoogle, 100);
-    }
+function updateEmailCountBadge(count) {
+  const badge = document.getElementById('hdrEmailCountBadge');
+  if(!badge) return;
+  if(count && count > 0) {
+    badge.textContent = count > 999 ? '999+' : count;
+    badge.style.display = 'block';
+  }
 }
 
-window.onload = tryInitGoogle;
+function initGoogle() {
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogle,
+    auto_select: true
+  });
+  const saved = loadSavedUser();
+  if (saved) { verifyAndLogin(saved); return; }
+  google.accounts.id.renderButton(
+    document.getElementById('googleBtn'),
+    { theme: 'outline', size: 'large', locale: 'he', width: 240 }
+  );
+  google.accounts.id.prompt();
+}
+
+function tryInitGoogle() {
+  if (window.google && window.google.accounts) { initGoogle(); }
+  else { setTimeout(tryInitGoogle, 100); }
+}
+
 setInterval(pollAll, 3000);
-function updateEmailCountBadge(count) {
-  const badge = document.getElementById('hdrEmailCountBadge');
-  if(!badge) return;
-  if(count && count > 0) {
-    badge.textContent = count > 999 ? '999+' : count;
-    badge.style.display = 'block';
-  }
-}
-function updateEmailCountBadge(count) {
-  const badge = document.getElementById('hdrEmailCountBadge');
-  if(!badge) return;
-  if(count && count > 0) {
-    badge.textContent = count > 999 ? '999+' : count;
-    badge.style.display = 'block';
-  }
-}
-/* hook into existing users_count fetch */
+window.addEventListener('load', tryInitGoogle);
