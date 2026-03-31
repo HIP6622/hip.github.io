@@ -1563,7 +1563,10 @@ function renderCreatorsSidebar(admins) {
       ? `<img src="${escAttr(pic)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none'">`
       : initials;
     const avStyle = pic ? '' : `background:${color};`;
-    const slug = creator.slug || '';
+    
+    // תיקון: אם חסר סלאג, ניקח אוטומטית את תחילת האימייל כזיהוי ייחודי
+    const slug = creator.slug || creator.email.split('@')[0];
+    
     const badge = (creator.role === 'supervisor') ? '<span class="creator-badge">מנהל</span>' : '';
     return `<div class="creator-item" onclick="switchToCreator('${escAttr(slug)}')" data-slug="${escAttr(slug)}">
       <div class="creator-av" style="${avStyle}">${avInner}</div>
@@ -1576,25 +1579,26 @@ function renderCreatorsSidebar(admins) {
 async function switchToCreator(slug) {
   document.querySelectorAll('.creator-item').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
-  currentChannelId = 'general'; // חוזרים לערוץ הרשמי אבל נסנן עליו
+  currentChannelId = 'general'; // חוזרים לערוץ הרשמי אבל מסננים עליו
 
   if (!slug) return;
   const el = document.querySelector('.creator-item[data-slug="' + slug + '"]');
   if (el) el.classList.add('active');
   if (window.innerWidth <= 900) document.getElementById('leftSidebar').classList.remove('open');
 
-  // משיכת כל היוצרים כדי למצוא את האימייל לפי ה-slug
+  // משיכת היוצרים כדי למצוא את המייל של היוצר הספציפי
   const lr = await fetch(BACKEND + '/allowed_list?t=' + Date.now());
   const ld = await lr.json();
-  const creator = (ld.emails || []).find(e => typeof e === 'object' && e.slug === slug);
+  
+  // זיהוי לפי סלאג מוגדר או לפי תחילת אימייל (אם הסלאג ריק)
+  const creator = (ld.emails || []).find(e => typeof e === 'object' && (e.slug === slug || e.email.split('@')[0] === slug));
   const creatorEmail = creator ? creator.email.toLowerCase() : null;
   const creatorName = creator ? creator.name : 'יוצר';
 
-  // עדכון כותרת הפיד
+  // עדכון כותרת הפיד למעלה
   const hdrName = document.getElementById('hdrChannelName');
   if (hdrName) hdrName.innerHTML = `${esc(siteGlobalSettings.title)} - <span style="color:#1a56db">הפוסטים של ${esc(creatorName)}</span>`;
 
-  // ניקוי הפיד וטעינה מחדש של הפוסטים המסוננים
   items = []; lastTs = 0; knownIds.clear(); oldestTs = 0; allLoaded = false;
   document.getElementById('feedInner').innerHTML = ''; document.getElementById('empty').style.display = 'block';
   applyWritePerm();
@@ -1603,8 +1607,8 @@ async function switchToCreator(slug) {
   try{
     const r=await fetch(BACKEND+`/feed?channel=${currentChannelId}&limit=500&t=${Date.now()}`); const d=await r.json();
     if(d.status==='ok'){
-      // הסינון מתבצע כאן: מציגים רק פוסטים של היוצר הזה
       let allFeed = d.feed;
+      // פה קורה הקסם: סינון רק לפוסטים של היוצר שעליו לחצנו
       if (creatorEmail) {
          allFeed = allFeed.filter(e => (e.senderEmail || '').toLowerCase() === creatorEmail);
       }
