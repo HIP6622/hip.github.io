@@ -1,5 +1,5 @@
 window._cardData = {};
-const BACKEND = "https://HIPHOP.pythonanywhere.com";
+const BACKEND = "https://hiphop.pythonanywhere.com";
 const GOOGLE_CLIENT_ID = '548333676754-ohvlnp1nfjpc1jnbkdfmr9hpccaj508i.apps.googleusercontent.com';
 const LOGO = 'https://i.ibb.co/KjBNwmPt/image.png';
 const ADMIN_EMAIL = 'hip@hamakom.ovh';
