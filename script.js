@@ -1485,14 +1485,26 @@ function tryInitGoogle() {
   if (window.google && window.google.accounts) { initGoogle(); }
   else { setTimeout(tryInitGoogle, 100); }
 }
-
 setInterval(pollAll, 3000);
+
+async function checkUrlForCreator() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const creatorSlug = urlParams.get('creator');
+  if (creatorSlug) {
+    // ממתין מעט שהיוצרים ייטענו ואז עובר ליוצר הספציפי
+    setTimeout(() => {
+        switchToCreator(creatorSlug);
+    }, 1500);
+  }
+}
+window.addEventListener('load', checkUrlForCreator);
 
 if (document.readyState === 'complete') {
   tryInitGoogle();
 } else {
   window.addEventListener('load', tryInitGoogle);
 }
+
 /* ===== CREATORS SIDEBAR ===== */
 function renderCreatorsSidebar(admins) {
   const list = document.getElementById('creatorsList');
@@ -1522,11 +1534,48 @@ function renderCreatorsSidebar(admins) {
   }).join('');
 }
 
-function switchToCreator(slug) {
+async function switchToCreator(slug) {
   document.querySelectorAll('.creator-item').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+  currentChannelId = 'general'; // חוזרים לערוץ הרשמי אבל נסנן עליו
+
   if (!slug) return;
   const el = document.querySelector('.creator-item[data-slug="' + slug + '"]');
   if (el) el.classList.add('active');
   if (window.innerWidth <= 900) document.getElementById('leftSidebar').classList.remove('open');
+
+  // משיכת כל היוצרים כדי למצוא את האימייל לפי ה-slug
+  const lr = await fetch(BACKEND + '/allowed_list?t=' + Date.now());
+  const ld = await lr.json();
+  const creator = (ld.emails || []).find(e => typeof e === 'object' && e.slug === slug);
+  const creatorEmail = creator ? creator.email.toLowerCase() : null;
+  const creatorName = creator ? creator.name : 'יוצר';
+
+  // עדכון כותרת הפיד
+  const hdrName = document.getElementById('hdrChannelName');
+  if (hdrName) hdrName.innerHTML = `${esc(siteGlobalSettings.title)} - <span style="color:#1a56db">הפוסטים של ${esc(creatorName)}</span>`;
+
+  // ניקוי הפיד וטעינה מחדש של הפוסטים המסוננים
+  items = []; lastTs = 0; knownIds.clear(); oldestTs = 0; allLoaded = false;
+  document.getElementById('feedInner').innerHTML = ''; document.getElementById('empty').style.display = 'block';
+  applyWritePerm();
+
+  setLoading(true);
+  try{
+    const r=await fetch(BACKEND+`/feed?channel=${currentChannelId}&limit=500&t=${Date.now()}`); const d=await r.json();
+    if(d.status==='ok'){
+      // הסינון מתבצע כאן: מציגים רק פוסטים של היוצר הזה
+      let allFeed = d.feed;
+      if (creatorEmail) {
+         allFeed = allFeed.filter(e => (e.senderEmail || '').toLowerCase() === creatorEmail);
+      }
+      
+      items=[...allFeed].reverse(); items.forEach(e=>knownIds.add(e.id)); allLoaded=allFeed.length<20; oldestTs=items.length?Math.min(...items.map(e=>e.ts||Infinity)):0; lastTs=items.length?Math.max(...items.map(e=>e.ts||0)):0;
+      const inner=document.getElementById('feedInner');
+      inner.innerHTML=items.length?items.map(buildMsg).join(''):'';
+      document.getElementById('empty').style.display=items.length?'none':'block';
+      document.getElementById('feedWrap').scrollTop=999999;
+      if(items.length)await pollAll();
+    }
+  }catch(e){} setLoading(false);
 }
