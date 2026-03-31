@@ -99,9 +99,9 @@
         </div>
       </div>
       
-      <a class="hdr-icon-btn" href="mailto:0548537646a@gmail.com?subject=%D7%9C%D7%9B%D7%91%D7%95%D7%93%20%D7%9E%D7%A0%D7%94%D7%9C%20%D7%90%D7%AA%D7%A8%20%D7%91%D7%99%D7%A0%D7%94%20%D7%95%D7%93%D7%A2%D7%94" target="_blank" rel="noopener" title="פנייה למנהל">
+      <button class="hdr-icon-btn" onclick="window.open('mailto:0548537646a@gmail.com?subject=%D7%9C%D7%9B%D7%91%D7%95%D7%93%20%D7%9E%D7%A0%D7%94%D7%9C%20%D7%90%D7%AA%D7%A8%20%D7%91%D7%99%D7%A0%D7%94%20%D7%95%D7%93%D7%A2%D7%94','_blank')" title="פנייה למנהל">
         <i class="fas fa-envelope" style="font-size:13px"></i>
-      </a>
+      </button>
       <button id="darkBtn" onclick="toggleDark()" title="מצב כהה">
         <i class="fas fa-moon" style="font-size:13px"></i>
       </button>
@@ -137,8 +137,10 @@
 </div>
 
 <div id="leftSidebar">
-  <div class="channels-hdr">📋 ערוצים ויוצרים</div>
+  <div class="channels-hdr">📋 ערוצים</div>
   <div id="channelsList"></div>
+  <div class="creators-hdr">✨ לפי יוצרים</div>
+  <div id="creatorsList"></div>
 </div>
 
 <div id="adminComposeBar">
@@ -525,11 +527,120 @@
       <button id="reportSubmitBtn" onclick="submitReport()" style="flex:1;background:#dc2626;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif;transition:background .15s;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
         <i class="fas fa-paper-plane" style="font-size:12px;"></i> שלח דיווח
       </button>
-      <button onclick="closeReportModal()" style="background:#f3f4f6;color:#374151;border:none;border-radius:12px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif;">ביטול</button>
-    </div>
-  </div>
-</div>
+      <button onclick="closeReportModal()" style="background:#f3f4f6;color:#374151;border:none;border-radius:12px;padding:12px 20px;
+<script>
+/* ===== CREATORS SIDEBAR ===== */
+// פונקציה שמאכלסת את סקשן היוצרים ב-sidebar
+// היא מחכה שה-admins/users יטענו ואז מציגה אותם
+// אתה יכול לקרוא לה מתוך הקוד הקיים שלך אחרי שה-admins נטענים
 
-<script src="./script.js" defer></script>
-</body>
-</html>
+function renderCreatorsSidebar(admins) {
+  const list = document.getElementById('creatorsList');
+  if (!list || !admins) return;
+  
+  // סנן רק יוצרים (user role) + מנהלים שיש להם slug
+  const creators = admins.filter(a => a.slug || a.role === 'user' || a.role === 'manager' || a.role === 'supervisor');
+  
+  if (creators.length === 0) {
+    list.innerHTML = '<div style="padding:10px 15px;font-size:12px;color:#aaa;">אין יוצרים עדיין</div>';
+    return;
+  }
+  
+  list.innerHTML = creators.map(creator => {
+    const initials = (creator.name || creator.displayName || '?').charAt(0).toUpperCase();
+    const colors = ['#1a56db','#7c3aed','#059669','#e02020','#d97706','#0891b2','#db2777'];
+    const color = colors[Math.abs(initials.charCodeAt(0)) % colors.length];
+    const avatarHtml = creator.photoURL || creator.avatar
+      ? `<img src="${creator.photoURL || creator.avatar}" onerror="this.parentElement.innerHTML='${initials}';this.parentElement.style.background='${color}';">`
+      : initials;
+    
+    return `<div class="creator-item" onclick="switchToCreator('${creator.slug || creator.email || ''}')" data-slug="${creator.slug || ''}">
+      <div class="creator-av" style="${!(creator.photoURL || creator.avatar) ? 'background:'+color : ''}">${avatarHtml}</div>
+      <span class="creator-name">${creator.name || creator.displayName || 'יוצר'}</span>
+      ${creator.role === 'supervisor' ? '<span class="creator-badge">מנהל</span>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function switchToCreator(slug) {
+  // מסמן כפעיל
+  document.querySelectorAll('.creator-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+  
+  if (!slug) return;
+  
+  const el = document.querySelector(`.creator-item[data-slug="${slug}"]`);
+  if (el) el.classList.add('active');
+  
+  // אם קיימת פונקציה בקוד שלך לעבור לערוץ/פיד של יוצר — קרא לה כאן
+  // לדוגמה: if (typeof switchChannel === 'function') switchChannel('creator_' + slug);
+  // או: if (typeof filterByCreator === 'function') filterByCreator(slug);
+  
+  // סגור sidebar במובייל
+  const sidebar = document.getElementById('leftSidebar');
+  if (sidebar && window.innerWidth <= 900) {
+    sidebar.classList.remove('open');
+  }
+}
+
+/* ===== DARK MODE FULL SCREEN FIX ===== */
+// הכפתור כבר קיים באתר שלך (toggleDark),
+// אנחנו רק מוודאים שה-class dark עובר ל-body כולו
+const _origToggleDark = window.toggleDark;
+if (typeof _origToggleDark === 'function') {
+  window.toggleDark = function() {
+    _origToggleDark();
+    // וודא שה-class מתעדכן ב-body
+    const isDark = document.body.classList.contains('dark');
+    document.documentElement.style.background = isDark ? '#0f0f15' : '';
+  };
+}
+
+/* ===== SEARCH FIX ===== */
+// תיקון: מוודא שפונקציית onSearch קיימת ומוצגת תוצאות
+window.addEventListener('DOMContentLoaded', () => {
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput && typeof onSearch !== 'function') {
+    // fallback אם onSearch לא מוגדרת — פשוט מחפש בטקסט הבועות
+    window.onSearch = function(val) {
+      const resultsWrap = document.getElementById('searchResults');
+      const resultsInner = document.getElementById('searchResultsInner');
+      const feedWrap = document.getElementById('feedWrap');
+      const searchEmpty = document.getElementById('searchEmpty');
+      
+      if (!val || val.trim() === '') {
+        clearSearch();
+        return;
+      }
+      
+      document.getElementById('searchClear').classList.add('show');
+      if (resultsWrap) resultsWrap.style.display = 'block';
+      if (feedWrap) feedWrap.style.display = 'none';
+      
+      const allBubbles = document.querySelectorAll('#feedInner .msg-row');
+      const results = [];
+      allBubbles.forEach(row => {
+        const text = row.innerText || '';
+        if (text.toLowerCase().includes(val.toLowerCase())) {
+          results.push(row.cloneNode(true));
+        }
+      });
+      
+      if (results.length === 0) {
+        if (resultsInner) resultsInner.innerHTML = '';
+        if (searchEmpty) searchEmpty.style.display = 'block';
+      } else {
+        if (searchEmpty) searchEmpty.style.display = 'none';
+        if (resultsInner) {
+          resultsInner.innerHTML = '';
+          results.forEach(r => resultsInner.appendChild(r));
+        }
+      }
+    };
+  }
+  
+  // הוסף את renderCreatorsSidebar כ-hook שה-JS הראשי יכול לקרוא לו
+  // אם יש פונקציה שנקראת loadAdmins או renderAdmins — תוסיף שם קריאה ל-renderCreatorsSidebar
+  window._renderCreatorsSidebar = renderCreatorsSidebar;
+});
+</script>
