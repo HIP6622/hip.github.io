@@ -902,3 +902,58 @@ body.dark #searchResults { background: #0f0f15; }
 .creators-hdr:hover .ch-arrow {
   transform: translateX(-3px);
 }
+/* ביטול המתיחה של רשימת הערוצים כדי שהכפתור יעלה למעלה */
+#channelsList {
+  flex: 0 1 auto !important;
+  margin-bottom: 10px !important;
+}
+
+/* העיצוב החדש והיוקרתי לכפתור יוצרים */
+.creators-hdr {
+  padding: 12px 16px !important;
+  margin: 0 14px 14px !important;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
+  border: 1px solid #bbf7d0 !important;
+  border-radius: 12px !important;
+  color: #166534 !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 8px rgba(22, 101, 52, 0.08) !important;
+}
+
+.creators-hdr:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(22, 101, 52, 0.15) !important;
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%) !important;
+}
+
+.ch-dot {
+  display: inline-block !important;
+  width: 6px !important;
+  height: 6px !important;
+  background: #22c55e !important;
+  border-radius: 50% !important;
+  box-shadow: 0 0 8px #22c55e !important;
+  animation: pulse-dot 2s infinite !important;
+}
+
+@keyframes pulse-dot {
+  0% { opacity: 0.5; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.ch-arrow {
+  font-size: 11px !important;
+  opacity: 0.7 !important;
+  transition: transform 0.2s !important;
+}
+
+.creators-hdr:hover .ch-arrow {
+  transform: translateX(-3px) !important;
+}
