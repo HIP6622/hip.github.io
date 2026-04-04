@@ -853,3 +853,52 @@ body.dark .creators-hdr:hover { color: #9ca3af; background: rgba(255,255,255,0.0
 /* ===== SEARCH FIX ===== */
 #searchResults { background: #eae9e4; }
 body.dark #searchResults { background: #0f0f15; }
+/* עיצוב כפתור "לפי יוצרים" בתפריט הצדדי */
+.creators-hdr {
+  padding: 12px 16px;
+  margin: 12px 14px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  color: #166534;
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(22, 101, 52, 0.08);
+}
+
+.creators-hdr:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22, 101, 52, 0.15);
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+}
+
+.ch-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #22c55e;
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0% { opacity: 0.5; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.ch-arrow {
+  font-size: 11px;
+  opacity: 0.7;
+  transition: transform 0.2s;
+}
+
+.creators-hdr:hover .ch-arrow {
+  transform: translateX(-3px);
+}
