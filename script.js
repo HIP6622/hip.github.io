@@ -1538,7 +1538,7 @@ if (document.readyState === 'complete') {
   window.addEventListener('load', tryInitGoogle);
 }
 
-/* ===== CREATORS SIDEBAR (Glass Panel) ===== */
+/* ===== CREATORS SIDEBAR ===== */
 function renderCreatorsSidebar(admins) {
   const listEl = document.getElementById('creatorsGlassList');
   if (!listEl || !admins) return;
@@ -1642,18 +1642,16 @@ window.closeReportModal = function() {
     try {
         if (window.event && window.event.target) {
             const modalWrapper = window.event.target.closest('div[style*="fixed"]') || window.event.target.closest('div[style*="absolute"]');
-            if (modalWrapper) modalWrapper.style.display = 'none';
+            if (modalWrapper) { modalWrapper.style.display = 'none'; }
         }
     } catch(e) {}
     document.querySelectorAll('div').forEach(el => {
         const onClickAttr = el.getAttribute('onclick');
-        if (onClickAttr && onClickAttr.includes('closeReportModal') && el.children.length > 0) {
-            el.style.display = 'none';
-        }
+        if (onClickAttr && onClickAttr.includes('closeReportModal') && el.children.length > 0) { el.style.display = 'none'; }
     });
     const inputs = document.querySelectorAll('textarea, input');
     inputs.forEach(input => {
-        if (input.id && input.id.toLowerCase().includes('report')) input.value = '';
+        if (input.id && input.id.toLowerCase().includes('report')) { input.value = ''; }
     });
 };
 
@@ -1696,5 +1694,5 @@ window.loadOlderMessages = async function() {
 setInterval(() => {
     const wrap = document.getElementById('feedWrap');
     if (!wrap || window.isLoadingOlder || allLoaded || !oldestTs) return;
-    if (wrap.scrollTop <= 150) window.loadOlderMessages();
+    if (wrap.scrollTop <= 150) { window.loadOlderMessages(); }
 }, 500);
