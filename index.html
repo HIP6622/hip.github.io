@@ -139,8 +139,13 @@
 <div id="leftSidebar">
   <div class="channels-hdr">📋 ערוצים</div>
   <div id="channelsList"></div>
-  <div class="creators-hdr">✨ לפי יוצרים</div>
-  <div id="creatorsList"></div>
+<div class="creators-hdr" onclick="toggleCreatorsPanel()">
+  <span style="display:flex;align-items:center;gap:7px;">
+    ✨ לפי יוצרים
+    <span class="ch-dot"></span>
+  </span>
+  <i class="fas fa-chevron-left ch-arrow"></i>
+</div>  <div id="creatorsList"></div>
 </div>
 
 <div id="adminComposeBar">
@@ -535,7 +540,18 @@
     </div>
   </div>
 </div>
-
+<div id="creatorsPanel">
+  <div class="cp-glass" style="position:relative;">
+    <div class="cp-glass-hdr">
+      <span class="cp-glass-title">יוצרים</span>
+      <button class="cp-glass-close" onclick="closeCreatorsPanel()">✕</button>
+    </div>
+    <div class="cp-glass-list-wrap" style="position:relative;">
+      <div class="cp-glass-list" id="creatorsGlassList"></div>
+      <div class="cp-glass-list-fade" id="creatorsListFade"></div>
+    </div>
+  </div>
+</div>
 <script src="script.js?v=3"></script>
 <script>
   // שמנו את זה כאן כדי שזה יעבוד תמיד, גם אם הקובץ השני קורס
