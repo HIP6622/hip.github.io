@@ -1967,35 +1967,92 @@ window.handleChatInputKey = function(e) {
 
 // מפעיל את הצ'אט ברקע כל 3 שניות
 setInterval(window.loadChatMessages, 3000);
-// ====== אפקט עכבר לרקע דינמי ======
+
+
+
+// ====== מנוע רקע מתקדם: הילת עכבר ונצנצים (אבק כוכבים) ======
 document.addEventListener("DOMContentLoaded", () => {
     const mouseBlob = document.getElementById('mouseBlob');
-    if (!mouseBlob) return;
+    const canvas = document.getElementById('sparklesCanvas');
+    if (!mouseBlob || !canvas) return;
 
-    let mouseX = window.innerWidth / 2;
-    let mouseY = window.innerHeight / 2;
+    const ctx = canvas.getContext('2d');
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    // עדכון גודל קנבס בשינוי מסך
+    window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    });
+
+    let mouseX = width / 2;
+    let mouseY = height / 2;
     let currentX = mouseX;
     let currentY = mouseY;
+    let particles = []; // מערך הנצנצים
 
+    // מעקב עכבר
     window.addEventListener('mousemove', (e) => {
         mouseX = e.clientX;
         mouseY = e.clientY;
+        addParticle(mouseX, mouseY);
     });
 
-    // תמיכה גם במסכי מגע (טלפונים)
+    // מעקב מגע (בטלפונים)
     window.addEventListener('touchmove', (e) => {
         if (e.touches.length > 0) {
             mouseX = e.touches[0].clientX;
             mouseY = e.touches[0].clientY;
+            addParticle(mouseX, mouseY);
         }
     });
 
-    function animateBg() {
-        currentX += (mouseX - currentX) * 0.06;
-        currentY += (mouseY - currentY) * 0.06;
+    // הפונקציה שזורקת נצנצים עדינים
+    function addParticle(x, y) {
+        // סיכוי של 70% לא להוציא נצנץ, כדי שזה יישאר סופר עדין ולא עמוס
+        if (Math.random() > 0.3) return; 
+        
+        particles.push({
+            x: x + (Math.random() * 20 - 10), // פיזור קל מסביב לעכבר
+            y: y + (Math.random() * 20 - 10),
+            size: Math.random() * 1.5 + 0.5, // גודל מיקרוסקופי
+            speedX: (Math.random() - 0.5) * 0.4, // תנועה איטית מאוד
+            speedY: (Math.random() - 0.5) * 0.4,
+            life: 1 // אורך חיים
+        });
+    }
+
+    // לולאת האנימציה (רצה 60 פעמים בשנייה)
+    function animate() {
+        // 1. תנועת הילת הרקע (הבועה)
+        currentX += (mouseX - currentX) * 0.05;
+        currentY += (mouseY - currentY) * 0.05;
         mouseBlob.style.transform = `translate(${currentX}px, ${currentY}px) translate(-50%, -50%)`;
-        requestAnimationFrame(animateBg);
+
+        // 2. ציור הנצנצים
+        ctx.clearRect(0, 0, width, height); // מנקה את הפריים הקודם
+        
+        for (let i = 0; i < particles.length; i++) {
+            let p = particles[i];
+            p.x += p.speedX;
+            p.y += p.speedY;
+            p.life -= 0.015; // מהירות ההתפוגגות
+
+            if (p.life > 0) {
+                // צבע לבן עם שקיפות רכה (מקסימום 40% אטימות)
+                ctx.fillStyle = `rgba(255, 255, 255, ${p.life * 0.4})`; 
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // מוחק נצנצים שמתו כדי לא להעמיס על המחשב
+        particles = particles.filter(p => p.life > 0);
+
+        requestAnimationFrame(animate);
     }
     
-    animateBg();
+    animate(); // התנעת המנוע
 });
