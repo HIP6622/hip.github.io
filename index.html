@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Assistant:wght@300;400;500;600;700;800&family=Noto+Color+Emoji&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=100">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -167,30 +167,30 @@
     <button class="ctb-btn" onmousedown="event.preventDefault()" onclick="composeFormat('bold')" title="מודגש"><i class="fas fa-bold"></i></button>
     <button class="ctb-btn" onmousedown="event.preventDefault()" onclick="composeFormat('italic')" title="נטוי"><i class="fas fa-italic"></i></button>
     <div style="width:1px;height:16px;background:#e5e7eb;margin:0 2px;"></div>
+    
     <div class="ctb-dropdown-wrap" id="imgDropWrap">
       <button class="ctb-btn" id="imgDropBtn" onclick="toggleCtbDropdown('imgDrop')" title="תמונה">
         <i class="fas fa-image"></i> תמונה
       </button>
-<div class="ctb-dropdown" id="imgDrop">
-      <div style="padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid #e5e7eb;">
-        <input type="file" id="fileUploadInput" accept="image/*" style="display:none;" onchange="uploadToImgBB(this)">
-        <button class="ctb-add-btn" onclick="document.getElementById('fileUploadInput').click()" style="background: #1a56db; color: white; border: none; padding: 10px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; transition: 0.2s;">
-          <i class="fas fa-cloud-upload-alt"></i> העלה תמונה מהמחשב
-        </button>
-        <div id="uploadStatus" style="display:none; font-size: 12px; color: #1a56db; text-align: center; margin-top: 8px; font-weight: bold;">
-          מעלה תמונה, אנא המתן... <i class="fas fa-spinner fa-spin"></i>
+      <div class="ctb-dropdown" id="imgDrop">
+        <div style="padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid #e5e7eb;">
+          <input type="file" id="fileUploadInput" accept="image/*" style="display:none;" onchange="uploadToImgBB(this)">
+          <button class="ctb-add-btn" onclick="document.getElementById('fileUploadInput').click()" style="background: #1a56db; color: white; border: none; padding: 10px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; transition: 0.2s;">
+            <i class="fas fa-cloud-upload-alt"></i> העלה תמונה מהמחשב
+          </button>
+          <div id="uploadStatus" style="display:none; font-size: 12px; color: #1a56db; text-align: center; margin-top: 8px; font-weight: bold;">
+            מעלה תמונה, אנא המתן... <i class="fas fa-spinner fa-spin"></i>
+          </div>
+        </div>
+        
+        <span class="ctb-inp-label">או הדבק כתובת URL של תמונה</span>
+        <input class="ctb-inp" id="composeImgUrl" type="text" placeholder="https://..." oninput="updateComposeImg()">
+        <div id="composeImgThumb" style="display:none;margin-top:8px;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;">
+          <img id="composeImgThumbImg" style="width:100%;max-height:100px;object-fit:contain;display:block;">
+          <button onclick="clearComposeImg()" style="width:100%;background:#fef2f2;border:none;border-top:1px solid #fecaca;color:#dc2626;font-size:11px;font-weight:700;cursor:pointer;padding:4px;font-family:'Heebo',sans-serif;">הסר תמונה</button>
         </div>
       </div>
-      
-      <span class="ctb-inp-label">או הדבק כתובת URL של תמונה</span>
-      <input class="ctb-inp" id="composeImgUrl" type="text" placeholder="https://..." oninput="updateComposeImg()">
-      <div id="composeImgThumb" style="display:none;margin-top:8px;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;">
-        <img id="composeImgThumbImg" style="width:100%;max-height:100px;object-fit:contain;display:block;">
-        <button onclick="clearComposeImg()" style="width:100%;background:#fef2f2;border:none;border-top:1px solid #fecaca;color:#dc2626;font-size:11px;font-weight:700;cursor:pointer;padding:4px;font-family:'Heebo',sans-serif;">הסר תמונה</button>
-      </div>
-    </div>
-    
-    <div class="ctb-dropdown-wrap" id="vidDropWrap">
+    </div> <div class="ctb-dropdown-wrap" id="vidDropWrap">
       <button class="ctb-btn" id="vidDropBtn" onclick="toggleCtbDropdown('vidDrop')" title="סרטון">
         <i class="fas fa-video"></i> סרטון
       </button>
