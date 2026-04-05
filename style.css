@@ -920,3 +920,16 @@ body.dark #searchResults { background: #0f0f15; }
     color: #1a56db !important; 
     border-color: #bfdbfe !important;
 }
+/* הגמשת תצוגת ה-HTML בהודעות - ביטול צורת הריבוע */
+#feedWrap iframe,
+.msg-html-content,
+.msg-html-wrap {
+    width: 100% !important;
+    min-height: 450px !important; /* נותן גובה התחלתי מכובד לתוכן ארוך */
+    height: auto !important;
+    aspect-ratio: auto !important; /* מבטל את הצורה המרובעת המעצבנת */
+    border-radius: 12px !important;
+    border: none !important;
+    resize: vertical !important; /* טריק מגניב: מאפשר למשתמשים למתוח את החלון כלפי מטה אם ה-HTML ממש ארוך! */
+    overflow: auto !important;
+}
