@@ -911,3 +911,20 @@ body.dark #searchResults { background: #0f0f15; }
     transform: translateX(-4px) !important; /* תזוזת החץ שמאלה */
     opacity: 1 !important;
 }
+/* סידור המיקום של פאנל היוצרים שיישב בצד ימין קרוב לכפתור ולא יברח שמאלה */
+#creatorsPanel {
+    position: fixed !important;
+    right: 250px !important; /* מרחק מהתפריט הימני */
+    left: auto !important;
+    top: 130px !important;
+    z-index: 9999 !important;
+}
+
+/* התאמה למובייל - מיקוד באמצע המסך */
+@media (max-width: 900px) {
+    #creatorsPanel {
+        right: 50% !important;
+        transform: translateX(50%) !important;
+        top: 20% !important;
+    }
+}
