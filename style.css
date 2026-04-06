@@ -986,9 +986,13 @@ body, html {
     background-image: url('https://images.nightcafe.studio/jobs/iswGnXUTqML996BNq2Wf/iswGnXUTqML996BNq2Wf-Ge7kO-adjusted.jpg?tr=w-1600,c-at_max');
     background-size: cover;
     background-position: center;
-    opacity: 0.5; /* אטימות שמאפשרת לגרדיאנט הבהיר מימין לעבור דרך התמונה */
-    mix-blend-mode: multiply; /* זה מה שהופך את התמונה לטקסטורה חיה */
+    opacity: 0.5; 
+    mix-blend-mode: multiply; 
     z-index: 1;
+    
+    /* === שתי השורות החדשות שמוחקות את התמונה מצד ימין === */
+    -webkit-mask-image: linear-gradient(to left, transparent 0%, transparent 15%, black 40%);
+    mask-image: linear-gradient(to left, transparent 0%, transparent 15%, black 40%);
 }
 
 /* הילה נוזלית (Liquid Morphing) */
