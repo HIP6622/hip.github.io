@@ -37,7 +37,7 @@
 </div>
 
 <div id="loginScreen">
-  <div class="login-card">
+ <div class="login-card">
     <img class="login-logo-img" src="https://i.ibb.co/KjBNwmPt/image.png" onerror="this.style.display='none'">
     <div class="login-title" id="loginSiteTitle">בינה ודעה</div>
     <div class="login-sub">התחברות באמצעות גוגל</div>
@@ -46,29 +46,6 @@
 </div>
 
 <div id="rightSidebar">
-  <div id="adminChatPanel">
-    <div class="chat-panel-hdr">
-      <i class="fas fa-comments" style="color:#1a56db;font-size:11px;flex-shrink:0"></i>
-      <span class="chat-panel-title">צ'אט מנהלים</span>
-      <span class="chat-panel-presence"><div class="chat-pres-dot"></div><span id="chatPresenceCount">1</span> פעילים</span>
-      <button class="chat-minimize-btn" id="chatMinimizeBtn" onclick="toggleChatMinimize()" title="מזעור">
-        <i class="fas fa-minus"></i>
-      </button>
-    </div>
-    <div id="chatMessages">
-      <div class="chat-empty-msg" id="chatEmptyMsg">אין הודעות עדיין</div>
-    </div>
-    <div id="chatTypingBar" style="display:none;"></div>
-    <div id="mentionDropdown"></div>
-    <div id="chatInputRow">
-      <textarea class="chat-inp" id="chatInput" rows="1" placeholder="הקלד הודעה..."
-        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,60)+'px';onChatType();checkChatMention(this)"
-        onkeydown="handleChatInputKey(event)"></textarea>
-      <button class="chat-send-btn" onclick="sendChatMsg()">
-        <i class="fas fa-paper-plane" style="font-size:10px"></i>
-      </button>
-    </div>
-  </div>
   <div id="adInChat" style="display:none;flex:1;overflow:hidden;border-top:1px solid #f0f0f0;">
     <iframe id="adInChatFrame" srcdoc="" style="width:100%;height:100%;border:none;display:none;"
       sandbox="allow-scripts allow-popups allow-forms allow-top-navigation-by-user-activation"></iframe>
@@ -84,7 +61,6 @@
   </a>
   <iframe id="adSidebarFrame" src="" style="display:none;width:100%;height:100%;border:none;" sandbox="allow-scripts allow-popups allow-forms allow-top-navigation-by-user-activation" loading="lazy"></iframe>
 </div>
-
 <div id="app">
   <header>
     <button id="mobileMenuBtn" onclick="toggleLeftSidebar()"><i class="fas fa-bars"></i></button>
