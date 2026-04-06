@@ -1049,3 +1049,10 @@ body, html {
 .ads-sidebar:empty {
     display: none;
 }
+/* פריסה חכמה לאזור הפוסטים (בלי לשבור את ה-JS) */
+#prog {
+    width: 100%;
+    max-width: 850px; /* רוחב מושלם שלא נמתח מידי */
+    margin-right: 5%; /* מרחיק קצת מהתפריט הימני */
+    margin-left: auto; /* דוחף הכל שמאלה ומשאיר מקום לפרסומות בעתיד */
+}
