@@ -1021,3 +1021,31 @@ body, html {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     pointer-events: none; z-index: 3;
 }
+/* ====== מערכת פריסה חכמה ואוטומטית ====== */
+
+/* המיכל העוטף של הכל */
+.layout-wrapper {
+    display: flex; 
+    justify-content: center; /* ממרכז את הכל אוטומטית כשהצד ריק */
+    align-items: flex-start;
+    gap: 40px; 
+    width: 100%;
+    padding-right: 2%; 
+}
+
+/* פיד היצירות שלך */
+.your-feed-container {
+    width: 100%;
+    max-width: 850px; 
+}
+
+/* 1. הגדרה לעמודת הפרסומות כשיש בה תוכן */
+.ads-sidebar {
+    width: 300px; 
+    flex-shrink: 0; 
+}
+
+/* 2. החיישן האוטומטי: אם קופסת הפרסומות ריקה מתוכן - תעלים אותה! */
+.ads-sidebar:empty {
+    display: none;
+}
